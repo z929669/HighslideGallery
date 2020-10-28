@@ -1,15 +1,14 @@
 <?php
 /**
  * HighslideGallery extension
- * by Brian McCloskey
-
+ *
  * Internationalisation file for extension HighslideGallery.
  *
  * @file
  * @ingroup Extensions
- * @author Brian McCloskey
- * @copyright 2012 Brian McCloskey
- * @license GNU General Public Licence 2.0 or later
+ * @author Brian McCloskey, Step Modifications
+ * @copyright 2012 Brian McCloskey, 2020 Step Modifications
+ * @license GPL-2.0-or-later
  */
 
 $messages = array();

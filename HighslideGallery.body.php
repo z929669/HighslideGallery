@@ -1,6 +1,12 @@
 <?php
 /*
- * HighslideGallery class.
+ * HighslideGallery class
+ *
+ * @file
+ * @ingroup Extensions
+ * @author Brian McCloskey, Step Modifications
+ * @copyright 2012 Brian McCloskey, 2020 Step Modifications
+ * @license CC BY-NC 3.0: http://creativecommons.org/licenses/by-nc/3.0/
  */
 
 if ( !defined( 'MEDIAWIKI' ) )

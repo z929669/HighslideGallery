@@ -1,14 +1,16 @@
 /*
  * HighslideGallery extension
- * by Brian McCloskey
+ *
+ * @file
+ * @ingroup Extensions
+ * @author Brian McCloskey, Step Modifications
+ * @copyright 2012 Brian McCloskey, 2020 Step Modifications
+ * @license CC BY-NC 3.0: http://creativecommons.org/licenses/by-nc/3.0/
  *
  * Some of the code used is from http://www.roadrash.no/
  * Creates image galleries as appropriate using the Highslide library.
  * Accepts syntax for images via caption prefix containing "highslide:"
  * without the quotes. Works for both single images as well as wiki galleries.
- *
- * Licensed under Creative Commons Attribution-NonCommercial license 3.0: http://creativecommons.org/licenses/by-nc/3.0/
- *
  */
 
 window.hs = hs;
