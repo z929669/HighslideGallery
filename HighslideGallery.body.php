@@ -31,7 +31,6 @@ class HighslideGallery {
     public static function AddResources (&$out, $skin) {
 		$out->addModules('ext.highslideGallery');
 		
-        return true;
     }
 
 	/**
@@ -45,7 +44,6 @@ class HighslideGallery {
 		$parser->setHook('hsyoutube', 'HighslideGallery::MakeYouTubeLink');
 		$parser->setFunctionHook('hsimg', 'HighslideGallery::MakeExtLink');
 	
-		return true;
 	}
 
 	/**
@@ -101,7 +99,6 @@ class HighslideGallery {
 			return false;
 		}
 
-		return true;
     }
 
 	/**
