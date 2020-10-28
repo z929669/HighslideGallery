@@ -1,0 +1,43 @@
+{
+	"name": "HighslideGallery",
+	"version": "1.1.0",
+	"author": [
+		"Brian McCloskey",
+		"Step Modifications"
+	],
+	"url": "https://www.mediawiki.org/wiki/Extension:HighslideGallery",
+	"descriptionmsg": "hg-desc",
+	"type": "parserhook",
+	"requires": {
+		"MediaWiki": ">= 1.29.0"
+	},
+	"ExtensionMessagesFiles": {
+		"HighslideGallery": "HighslideGallery.i18n.php"
+	},
+	"AutoloadClasses": {
+		"HighslideGallery": "HighslideGallery.body.php"
+	},
+	"ResourceModules": {
+		"ext.highslideGallery": {
+			"scripts": [
+				"highslide.js",
+				"highslide.cfg.js"
+			],
+			"styles": [
+				"highslide.css",
+				"highslide.override.css"
+			],
+			"position": "top"
+		}
+	},
+	"ResourceFileModulePaths": {
+		"localBasePath": "modules",
+		"remoteExtPath": "HighslideGallery/modules"
+	},
+	"Hooks": {
+		"ImageBeforeProduceHTML": "HighslideGallery::MakeImageLink",
+		"BeforePageDisplay": "HighslideGallery::AddResources",
+		"ParserFirstCallInit": "HighslideGallery::AddHooks"
+	},
+	"manifest_version": 2
+}

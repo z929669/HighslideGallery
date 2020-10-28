@@ -17,9 +17,9 @@ $wgExtensionCredits['parserhook'][] = array(
     'path'              => __FILE__,
     'name'              => 'HighslideGallery',
     'url'               => 'https://www.mediawiki.org/wiki/Extension:HighslideGallery',
-    'author'            => 'Brian McCloskey',
+    'author'            => array('Brian McCloskey','Step Modifications'),
     'descriptionmsg'    => 'hg-desc',
-    'version'           => '1.0.0'
+    'version'           => '1.1.0'
 );
 
 $wgAutoloadClasses['HighslideGallery'] = dirname( __FILE__ ) . '/HighslideGallery.body.php';
