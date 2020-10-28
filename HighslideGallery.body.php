@@ -93,7 +93,7 @@ class HighslideGallery {
             }
 			
 			// Use the dummy linker object to create the HTML.
-			$res = $dummy->MakeImageLink2($title, $file, $frameParams, $handlerParams);
+			$res = $dummy->MakeThumbLink2($title, $file, $frameParams, $handlerParams);
 
 			// Highslide time.
 			self::AddHighslide($res, $file, $frameParams['caption'], $title);
