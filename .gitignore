@@ -1,0 +1,6 @@
+/composer.lock
+/node_modules/
+/vendor/
+modules/graphics
+*highslide.js
+*highslide.css
