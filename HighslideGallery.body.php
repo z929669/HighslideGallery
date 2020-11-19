@@ -143,7 +143,7 @@ class HighslideGallery {
         }
 
         $s = "<a class=\"highslide link-youtube\" onclick=\"return hs.htmlExpand(this, videoOptions)\" title=\"${title}\"";
-        $s = $s . " href=\"http://www.youtube.com/embed/${code}${autoplay}autohide=1&amp;rel=0\">";
+        $s = $s . " href=\"https://www.youtube.com/embed/${code}${autoplay}mute=1&amp;autohide=1&amp;playlist=${code}&amp;loop=1\">";
         $s = $s . $title . "</a>";
 
 		if (isset($attributes['caption'])) {
