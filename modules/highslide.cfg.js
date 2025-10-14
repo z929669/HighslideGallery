@@ -13,7 +13,9 @@
  * without the quotes. Works for both single images as well as wiki galleries.
  */
 
-window.hs = hs;
+// NOTE: Avoid forcibly binding hs to window; the core script is injected early by PHP and exposes hs globally.
+// Double-binding can cause collisions in certain load orders.
+//window.hs = hs
 
 hs.graphicsDir = mw.config.get( 'wgExtensionAssetsPath' ) + '/HighslideGallery/modules/graphics/';
 hs.align = 'center';
@@ -77,18 +79,18 @@ hs.registerOverlay({
 hs.addEventListener(window, 'resize', function() {
 	var i, exp;
 	hs.getPageSize();
-	
+
 	for (i = 0; i < hs.expanders.length; i++) {
 		exp = hs.expanders[i];
 		if (exp) {
 			var x = exp.x,
 				y = exp.y;
-			
+
 			// Get new thumb positions
 			exp.tpos = hs.getPosition(exp.el);
 			x.calcThumb();
 			y.calcThumb();
-			
+
 			// Calculate new popup position
 			x.pos = x.tpos - x.cb + x.tb;
 			x.scroll = hs.page.scrollLeft;
@@ -98,7 +100,7 @@ hs.addEventListener(window, 'resize', function() {
 			y.clientSize = hs.page.height;
 			exp.justify(x, true);
 			exp.justify(y, true);
-			
+
 			// Set new left and top to wrapper and outline
 			exp.moveTo(x.pos, y.pos);
 		}
