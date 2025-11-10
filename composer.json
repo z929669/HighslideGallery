@@ -1,0 +1,19 @@
+{
+	"name": "z929669/highslidegallery",
+	"description": "MediaWiki extension: HighslideGallery integrates Highslide JS to display images and YouTube videos in an in-page gallery/lightbox.",
+	"type": "mediawiki-extension",
+	"license": "CC-BY-NC-3.0",
+	"keywords": ["mediawiki", "extension", "gallery", "lightbox", "highslide", "images", "youtube"],
+	"homepage": "https://gitlab.com/z929669/highslidegallery",
+	"support": {
+		"issues": "https://gitlab.com/z929669/highslidegallery/-/issues",
+		"source": "https://gitlab.com/z929669/highslidegallery"
+	},
+	"require": {
+		"php": ">=7.2",
+		"composer/installers": "^2.0"
+	},
+	"extra": {
+		"installer-name": "HighslideGallery"
+	}
+}
