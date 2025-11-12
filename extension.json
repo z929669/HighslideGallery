@@ -18,7 +18,6 @@
 		"HighslideGallery": "HighslideGallery.body.php"
 	},
 	"ResourceModules": {
-		// NOTE: Do not include "highslide.js" here; it is injected via BeforePageDisplay to guarantee a global `hs`.
 		"ext.highslideGallery": {
 			"scripts": [
 				"highslide.cfg.js"
