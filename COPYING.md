@@ -1,24 +1,15 @@
-# Licensing
+# Licenses
 
-This repository contains two distinct pieces with different, compatible licenses:
+## Extension code
+This MediaWiki extension (all files except where noted) is licensed under the
+**GNU General Public License v2.0 (GPL-2.0)**.
+See: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
-## 1) MediaWiki extension code (this repository)
-- **License**: Creative Commons Attribution–NonCommercial 3.0 (CC BY-NC 3.0)
-- **Copyright**:
-  - © Step Modifications and prior contributors (years vary)
-  - Historical authorship includes Brian McCloskey / Step Modifications
-- **Notes**: You may use, share, and adapt for **non-commercial** purposes with attribution.
+## Bundled third-party library
+`modules/highslide.js` is licensed under the **MIT License**.
+MIT is compatible with GPL. The original license notice is preserved in the file.
+MIT text: https://mit-license.org/
 
-## 2) Highslide JS library (`modules/highslide.js`)
-- **License**: Creative Commons Attribution–NonCommercial 2.5 (CC BY-NC 2.5) — **non-commercial only**.
-- **Attribution**: Highslide JS by Torstein Hønsi (Highslide Software).
-- **Implication**: Using this extension as shipped means the bundled Highslide JS is limited to non-commercial use. For commercial use, remove/replace `modules/highslide.js` with a suitably licensed alternative or obtain the appropriate license.
-
-## Combined use
-The extension’s CC BY-NC 3.0+ ( https://creativecommons.org/licenses/by-nc/4.0/deed.en ) and Highslide JS’s CC BY-NC 2.5 are compatible for **non-commercial** use. For any commercial deployment, you must satisfy Highslide JS licensing separately and ensure compliance with all applicable licenses.
-
----
-
-**SPDX identifiers**  
-- Extension code: LicenseRef-CC-BY-NC-3.0  
-- Highslide JS: LicenseRef-CC-BY-NC-2.5
+## Notes
+- You may redistribute this extension under GPL-2.0 only.
+- The MIT-licensed file remains under MIT terms; do not remove or alter its license header.

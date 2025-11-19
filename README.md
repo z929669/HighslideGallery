@@ -3,8 +3,11 @@
 HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
 
 > **Status**: actively maintained  
-> **Tested**: MediaWiki 1.39–1.41 (and later should work)  
-> **License**: Extension code is CC BY-NC 3.0. The bundled Highslide JS library is CC BY-NC 2.5 (non-commercial). See COPYING.md.
+> **Tested**:
+>> v2.0.0 &rarr; Mediawiki 1.39  
+>> v1.3.0 &rarr; Mediawiki 1.39  
+>> v1.1.0 &rarr; Mediawiki 1.22  
+>> v1.0.0 &rarr; Mediawiki 1.17
 
 ---
 
@@ -18,17 +21,17 @@ HighslideGallery adds simple highslide-style image/galleries and YouTube popups 
 ---
 
 ## Installation
+Note: If you customized `$wgExtensionAssetsPath`, update `hs.graphicsDir` in `modules/highslide.cfg.js` accordingly.
 
 ### A) Composer (recommended)
-
-If you use MediaWiki’s `composer.local.json`, add:
+Using MediaWiki’s `composer.local.json`, add:
 
     {
       "repositories": [
         { "type": "vcs", "url": "https://gitlab.com/z929669/highslidegallery" }
       ],
       "require": {
-        "z929669/highslidegallery": "^1.3"
+        "z929669/highslidegallery": "^2.0"
       },
       "extra": {
         "merge-plugin": {
@@ -45,18 +48,16 @@ Then run:
 
 This installs into `extensions/HighslideGallery/`.
 
-(If you prefer a fixed ZIP dist, you can point a `dist.url` at a tag archive such as `v1.3.0`.)
+(For a fixed ZIP dist, point a `dist.url` at a tag archive such as `v1.3.0`.)
 
 ### B) Manual install
-
-1) Download a tagged release (e.g., `v1.3.0`) and extract to:
+1) Download a tagged release (e.g., `v2.0.0`) and extract to:
 
     extensions/HighslideGallery/
 
 2) Ensure the directory contains `extension.json`, `modules/`, and the PHP sources.
 
 ### Post-install
-
 In `LocalSettings.php`:
 
     wfLoadExtension( 'HighslideGallery' );
@@ -71,7 +72,6 @@ The extension registers:
 ## Usage
 
 ### Images / galleries
-
 Basic thumbnail (caption auto-extracted):
 
     [[File:MyImage.jpg|thumb|My caption here]]
@@ -86,7 +86,6 @@ External image with width and caption:
     {{#hsimg:GALLERYMyGroup|200|My Caption|https://example.com/pic.jpg}}
 
 ### YouTube
-
     <hsyoutube title="Trailer">https://www.youtube.com/watch?v=VIDEO_ID</hsyoutube>
 
 Autoplay:
@@ -110,6 +109,8 @@ https://gitlab.com/z929669/highslidegallery
 ---
 
 ## License
-- **Extension code**: CC BY-NC 3.0 — see COPYING.md.
-- **Highslide JS** (`modules/highslide.js`): CC BY-NC 2.5 (non-commercial). See COPYING.md for attribution.
-===== END README.md =====
+- **Extension code**: GPL-2.0-or-later  
+- **Bundled library (`modules/highslide.js`)**: MIT (license notice kept in-file)
+
+Both licenses are compatible; shipping MIT code within a GPL-2.0 project is allowed.
+

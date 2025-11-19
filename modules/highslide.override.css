@@ -1,112 +1,179 @@
 /*
- * HighslideGallery extension
+ * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
+ * @Copyright (C) 2012  Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
- * Overrides for highslide.css
+ * This program is free software; you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
  *
- * @file
- * @ingroup Extensions
- * @author Brian McCloskey, Step Modifications
- * @copyright 2012 Brian McCloskey, 2020 Step Modifications
- * @license CC BY-NC 3.0: http://creativecommons.org/licenses/by-nc/3.0/
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program; if not, see
+ * < https://www.gnu.org/licenses/ >.
  */
+
+/*
+ * HighslideGallery CSS overrides for Highslide 5.x
+ * Vendor styles: modules/highslide.css
+ */
+
+/* -------------------------------------------------------------------------
+ * Frame & caption tone
+ * ------------------------------------------------------------------------- */
+
+/* Base frame used by HSG (images & YouTube) */
+.highslide-wrapper.hsg-frame {
+	background: var(--hsg-frame-bg, #111);
+	border: 3px solid var(--hsg-frame-border, #666);
+	box-shadow: 0 0 18px 0px var(--hsg-frame-shadow, #000);
+
+	/* Force horizontal centering in the viewport */
+	left: 50% !important;
+	transform: translateX(-50%);
+}
+
+/* Number + caption tone */
+.highslide-number  { color: var(--hsg-caption-number, #b0b0b0); }
+.highslide-caption { color: var(--hsg-caption-text,   #b0b0b0); }
+
+/* -------------------------------------------------------------------------
+ * Controls & dimmer
+ * ------------------------------------------------------------------------- */
+
+/* Hide Full Expand button */
 a.highslide-full-expand {
-	background: none;
-	display: none;
+	display: block;
+	width: 28px;
+	height: 28px;
+	background: url(graphics/fullexpand.gif) no-repeat 50% 50%;
+	text-indent: -9999px;
+	overflow: hidden;
 }
-.highslide-number {
-	color: #999;
-}
-.highslide-caption {
-	color: #c2c2c2;
-}
+
+/* Dimmer color */
 .highslide-dimming {
-	background-color: #35383B;
+	background-color: rgba(0, 0, 0, 0.75) !important;
 }
+
+/* Gecko sometimes gets clever with viewport sizing; belt-and-suspenders
+ * to ensure the dimmer actually covers the viewport in Firefox. */
+@-moz-document url-prefix() {
+	.highslide-dimming.highslide-viewport-size {
+		position: fixed !important;
+		left: 0 !important;
+		top: 0 !important;
+		width: 100% !important;
+		height: 100% !important;
+	}
+}
+
+/* Image edge glow + neutral cursor */
 .highslide-image {
 	box-shadow: 0 0 10px 2px #000;
+	cursor: default !important;
 }
-/* Gallery controls */
-.controls a {
+
+/* Ensure the close control is visible and above the skin UI */
+.controls.close {
+	position: fixed;      /* detach from Highslide's inner flow */
+	top: 10px;
+	right: 10px;
+	z-index: 99999;
+	padding: 4px;
+}
+
+/* Close button – make it clearly visible in the top-right */
+.controls.close a {
 	display: block;
-	float: left;
-	height: 64px;
-	width: 64px;
-	margin: 0;
-	outline: none;
-	background: url(prevnext.png) no-repeat;
+	width: 2rem;
+	height: 2rem;
+	background: url(graphics/close.png) no-repeat 50% 50%;
+	text-indent: -9999px;
+	overflow: hidden;
 }
-.prev a {
-	background-position: 0 -64px;
+
+/* Bottom text controls – make them bigger and pulled up a bit */
+.highslide-controls {
+	font-size: 1.4rem;
+	padding: 3px 8px;
+	background: rgba(0, 0, 0, 0.65);
+	border-radius: 4px;
 }
-.prev a:hover {
-	background-position: 0 0;
+
+.highslide-controls a {
+	padding: 0 6px;
 }
-.next a {
-	background-position: -64px -64px;
+
+/* Breathing room above the viewport edge */
+.highslide-viewport .highslide-controls {
+	margin-bottom: 1.5rem;
 }
-.next a:hover {
-	background-position: -64px 0;
-}
-.close a {
-	margin: 10px;
-	height: 32px;
-	width: 32px;
-	background-position: -32px -128px;
-}
-.close a:hover {
-	margin: 10px;
-	height: 32px;
-	width: 32px;
-	background-position: 0 -128px;
-}
-.highslide-thumbstrip td {
-	padding: 3px;
-}
+
+/* -------------------------------------------------------------------------
+ * Thumbstrip tweaks
+ * ------------------------------------------------------------------------- */
+
+.highslide-thumbstrip td { padding: 3px; }
+
 .highslide-thumbstrip-horizontal img {
-	height: 80px;
+	height: 80px;           /* was 40px in vendor */
 	border: none !important;
 }
+
 .highslide-viewport .highslide-thumbstrip-horizontal .highslide-marker {
 	top: 87px;
 	border-bottom-color: #999;
 }
+
 .highslide-thumbstrip-horizontal .highslide-scroll-up,
 .highslide-thumbstrip-horizontal .highslide-scroll-up div,
 .highslide-thumbstrip-horizontal .highslide-scroll-down,
 .highslide-thumbstrip-horizontal .highslide-scroll-down div {
 	height: 82px;
 }
+
+/* Thumb opacity/hover state */
 .highslide-thumbstrip img {
 	opacity: 0.5;
 	border: 1px solid #666 !important;
 }
+
 .highslide-thumbstrip img:hover {
 	opacity: 1;
 	border: 1px solid #999 !important;
 }
+
 .highslide-thumbstrip .highslide-active-anchor img {
 	opacity: 1;
 	border: 1px solid #ccc !important;
 }
-/******************************************************************************/
-/* YouTube CSS */
-.link-youtube {
+
+/* -------------------------------------------------------------------------
+ * YouTube link + popup tweaks
+ * ------------------------------------------------------------------------- */
+
+/* YouTube link decoration */
+/*.link-youtube {*/
 	/* @embed */
+/*	background: url(youtube.png) center right no-repeat;
+	padding-right: 18px;
+}*/
+
+/* Decorate ONLY plain text YouTube links, not thumbs */
+a.link-youtube:not(.hsg-yt-thumb) {
 	background: url(youtube.png) center right no-repeat;
 	padding-right: 18px;
 }
-.you-tube .highslide-footer {
-	display: none;
+
+/* No ::after triangle at all */
+a.link-youtube::after {
+	content: none;
 }
-.you-tube .highslide-html {
-	background-color: rgb(0,0,0);
-}
-.you-tube .highslide-html-content {
-	padding: 0;
-}
-.you-tube .highslide-header {
-	display: none;
-}
-.you-tube .highslide-move {
-	display: none;
-}
+
+.you-tube .highslide-footer { display: none; }
+.you-tube .highslide-html { background-color: #000; }
+.you-tube .highslide-html-content { padding: 0; }
+.you-tube .highslide-header,
+.you-tube .highslide-move { display: none; }
