@@ -26,7 +26,7 @@
 /* Base frame used by HSG (images & YouTube) */
 .highslide-wrapper.hsg-frame {
 	background: var(--hsg-frame-bg, #111);
-	border: 3px solid var(--hsg-frame-border, #666);
+	border: 3px solid var(--hsg-frame-border, #888);
 	box-shadow: 0 0 18px 0px var(--hsg-frame-shadow, #000);
 
 	/* Force horizontal centering in the viewport */
@@ -35,8 +35,8 @@
 }
 
 /* Number + caption tone */
-.highslide-number  { color: var(--hsg-caption-number, #b0b0b0); }
-.highslide-caption { color: var(--hsg-caption-text,   #b0b0b0); }
+.highslide-number  { color: var(--hsg-caption-number, #888); }
+.highslide-caption, .highslide-caption > .internal { color: var(--hsg-caption-text, #b0b0b0); }
 
 /* -------------------------------------------------------------------------
  * Controls & dimmer
@@ -71,25 +71,33 @@ a.highslide-full-expand {
 
 /* Image edge glow + neutral cursor */
 .highslide-image {
-	box-shadow: 0 0 10px 2px #000;
+	box-shadow: 0 0 26px 12px var(--hsg-ytb-bg, #000);
 	cursor: default !important;
+	border: 3px solid var(--hsg-frame-border, #888);
+	border-radius: 15px;
 }
 
 /* Ensure the close control is visible and above the skin UI */
 .controls.close {
 	position: fixed;      /* detach from Highslide's inner flow */
-	top: 10px;
-	right: 10px;
+	top: 20px;
+	right: 20px;
 	z-index: 99999;
-	padding: 4px;
+	opacity: 0.75;
+}
+
+/* Close control hover opacity */
+.close:not(:disabled):not(.disabled):hover, .close:not(:disabled):not(.disabled):focus {
+	opacity: 0.95;
 }
 
 /* Close button – make it clearly visible in the top-right */
 .controls.close a {
 	display: block;
-	width: 2rem;
-	height: 2rem;
+	width: 2.0rem;
+	height: 2.0rem;
 	background: url(graphics/close.png) no-repeat 50% 50%;
+	background-size: 2.0rem;
 	text-indent: -9999px;
 	overflow: hidden;
 }
@@ -124,7 +132,7 @@ a.highslide-full-expand {
 
 .highslide-viewport .highslide-thumbstrip-horizontal .highslide-marker {
 	top: 87px;
-	border-bottom-color: #999;
+	border-bottom-color: var(--hsg-ts-border-hover, #aaa);
 }
 
 .highslide-thumbstrip-horizontal .highslide-scroll-up,
@@ -137,32 +145,40 @@ a.highslide-full-expand {
 /* Thumb opacity/hover state */
 .highslide-thumbstrip img {
 	opacity: 0.5;
-	border: 1px solid #666 !important;
+	border: 1px solid var(--hsg-frame-border, #888) !important;
 }
 
 .highslide-thumbstrip img:hover {
 	opacity: 1;
-	border: 1px solid #999 !important;
+	border: 1px solid var(--hsg-ts-border-hover, #aaa) !important;
 }
 
 .highslide-thumbstrip .highslide-active-anchor img {
 	opacity: 1;
-	border: 1px solid #ccc !important;
+	border: 1px solid var(--hsg-ts-border, #6a5d50) !important;
 }
 
 /* -------------------------------------------------------------------------
  * YouTube link + popup tweaks
  * ------------------------------------------------------------------------- */
 
-/* YouTube link decoration */
-/*.link-youtube {*/
-	/* @embed */
-/*	background: url(youtube.png) center right no-repeat;
-	padding-right: 18px;
-}*/
+.highslide img {
+	border: 2px solid var(--hsg-frame-border, #888);
+}
+
+.hsg-yt-thumb + .gallerytext {
+	background: url(youtube.png) center left no-repeat;
+	padding-left: 1.25rem;
+	font-size: 0.8rem;
+}
+
+.gallerytext {
+	font-size: 0.8rem;
+	padding: 0.25rem
+}
 
 /* Decorate ONLY plain text YouTube links, not thumbs */
-a.link-youtube:not(.hsg-yt-thumb) {
+a.link-youtube:not(.hsg-ytb-thumb) {
 	background: url(youtube.png) center right no-repeat;
 	padding-right: 18px;
 }
@@ -172,8 +188,9 @@ a.link-youtube::after {
 	content: none;
 }
 
+/* YouTube popup shell – "you-tube" is a shipped/public name and preserved */
 .you-tube .highslide-footer { display: none; }
-.you-tube .highslide-html { background-color: #000; }
+.you-tube .highslide-html { background-color: (--hsg-ytb-bg, #000); }
 .you-tube .highslide-html-content { padding: 0; }
 .you-tube .highslide-header,
 .you-tube .highslide-move { display: none; }

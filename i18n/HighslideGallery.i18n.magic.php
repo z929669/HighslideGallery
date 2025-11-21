@@ -19,7 +19,7 @@ $magicWords = [];
 
 // English (content language). Add other languages as needed.
 $magicWords['en'] = [
-	// Parser function name (used as {{#hsimg:...}})
-	'hsimg' => [ 0, 'hsimg' ],
-	'hsytb' => [ 0, 'hsytb' ]
+	// Parser function name (used as {{#hsg*:...}})
+	'hsgimg' => [ 0, 'hsimg', 'hsgimg' ],
+	'hsgytb' => [ 0, 'hsgytb' ]
 ];

@@ -20,15 +20,18 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 }
 
 class HighslideGallery {
-	private static $hgID;
-	private static $isGallery = false;
-	private static $hgLabel; // optional display label, derived from hsgid
-	private static $lastGroupID;  // last slideshow group rendered on this page
+	// HSG-owned gallery/group identity
+	private static $hsgId;               // current slideshow group id
+	private static $isHsgGroupMember = false;
+	private static $hsgLabel;           // optional display label, derived from hsgid
+	private static $lastHsgGroupId;     // last slideshow group rendered on this page
 
 	public static function AddResources( OutputPage &$out, Skin &$skin ): void {
-		self::$hgID    = null;
-		self::$isGallery = false;
-		self::$hgLabel   = null;
+		// Reset per-page state
+		self::$hsgId            = null;
+		self::$isHsgGroupMember = false;
+		self::$hsgLabel         = null;
+		self::$lastHsgGroupId   = null;
 
 		// Let ResourceLoader handle highslide.js + cfg + CSS.
 		$out->addModules( 'ext.highslideGallery' );
@@ -36,42 +39,57 @@ class HighslideGallery {
 
 	// Parser hooks are non-abortable; return true. Use [self::class, 'method'].
 	public static function AddHooks( Parser $parser ): bool {
-		// Old HTML tag form: <hsyoutube>…</hsyoutube>
+		// -----------------------------------------------------------------
+		// Tags
+		// -----------------------------------------------------------------
+		// Legacy tag – kept for backward compatibility
 		$parser->setHook( 'hsyoutube', [ self::class, 'MakeYouTubeLink' ] );
-	
-		// Existing image parser function: {{#hsimg: … }}
-		$parser->setFunctionHook( 'hsimg', [ self::class, 'MakeExtLink' ] );
-	
-		// New YouTube parser function: {{#hsytb: url | title=… | caption=… | autoplay }}
-		$parser->setFunctionHook( 'hsytb', [ self::class, 'MakeYouTubeParserFunc' ] );
-	
+
+		// Canonical HSG tag for YouTube (ytb = all things YouTube)
+		$parser->setHook( 'hsgytb', [ self::class, 'MakeYouTubeLink' ] );
+
+		// -----------------------------------------------------------------
+		// Parser functions
+		// -----------------------------------------------------------------
+		$parser->setFunctionHook( 'hsgimg', [ self::class, 'MakeExternalImageLink' ] );
+		$parser->setFunctionHook( 'hsgytb', [ self::class, 'MakeYouTubeParserFunction' ] );
+
 		return true;
 	}
 
-	public static function MakeImageLink( &$dummy, &$title, &$file, &$frameParams, &$handlerParams, &$time, &$res ) {
-		$galleryID = [];
-	
-		if ( isset( $frameParams['caption'] )
-			&& preg_match( '/^(hsgid|highslide)[^:]*:/i', $frameParams['caption'] )
+	public static function MakeImageLink(
+		&$dummy,
+		&$title,
+		&$file,
+		&$frameParams,
+		&$handlerParams,
+		&$time,
+		&$res
+	) {
+		$galleryIdMatches = [];
+
+		if (
+			isset( $frameParams['caption'] ) &&
+			preg_match( '/^(hsgid|highslide)[^:]*:/i', $frameParams['caption'] )
 		) {
 			// hsgid=Foo-Bar/Baz:Caption  OR  highslide=Foo-Bar/Baz:Caption
 			preg_match(
 				'/^(hsgid|highslide)=(?!:)([A-Za-z0-9_\/-]+)/i',
 				$frameParams['caption'],
-				$galleryID
+				$galleryIdMatches
 			);
-	
-			if ( !empty( $galleryID[2] ) ) {
-				// explicit group id
-				self::$hgID    = $galleryID[2];
-				self::$hgLabel = $galleryID[2]; // label starts as the explicit id
+
+			if ( !empty( $galleryIdMatches[2] ) ) {
+				// Explicit group id
+				self::$hsgId    = $galleryIdMatches[2];
+				self::$hsgLabel = $galleryIdMatches[2]; // label starts as the explicit id
 			} else {
-				// no id after = → treat as “no group”
-				self::$hgID    = null;
-				self::$hgLabel = null;
+				// No id after = → treat as “no group”
+				self::$hsgId    = null;
+				self::$hsgLabel = null;
 			}
-	
-			// strip the hsgid=/highslide= prefix from caption/alt/title
+
+			// Strip the hsgid=/highslide= prefix from caption/alt/title
 			$frameParams['caption'] = preg_replace(
 				'/^(hsgid|highslide)[^:]*:/i',
 				'',
@@ -91,15 +109,23 @@ class HighslideGallery {
 					$frameParams['title']
 				);
 			}
-	
+
 			$res = $dummy->MakeThumbLink2( $title, $file, $frameParams, $handlerParams );
 			self::AddHighslide( $res, $file, $frameParams['caption'], $title );
 			return false;
 		}
-	
+
 		return true;
 	}
 
+	/**
+	 * Shared builder for YouTube links.
+	 *
+	 * Used by:
+	 *   - <hsyoutube>…</hsyoutube> (legacy tag)
+	 *   - <hsgytb>…</hsgytb>       (canonical tag)
+	 *   - {{#hsgytb: …}}          (parser function, via MakeYouTubeParserFunction)
+	 */
 	public static function MakeYouTubeLink(
 		$content,
 		array $attributes,
@@ -107,10 +133,9 @@ class HighslideGallery {
 		?PPFrame $frame = null,
 		bool $fromParserFunc = false
 	) {
-
 		$raw  = trim( (string)$content );
 		$code = '';
-	
+
 		// 1) Try normal URL shapes first.
 		if ( preg_match( '/[?&]v=([^?&]+)/', $raw, $m ) ) {
 			// https://www.youtube.com/watch?v=CODE
@@ -144,17 +169,17 @@ class HighslideGallery {
 		}
 
 		// Caption → store in data attribute so JS can feed hs.captionText.
-		$caption   = $attributes['caption'] ?? '';
-		$captionEsc = $caption !== ''
+		$caption     = $attributes['caption'] ?? '';
+		$captionEsc  = $caption !== ''
 			? htmlspecialchars( $caption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' )
 			: '';
-		$dataCaptionAttr = $captionEsc !== ''
+		$dataCaption = $captionEsc !== ''
 			? ' data-hsg-caption="' . $captionEsc . '"'
 			: '';
 
 		// Determine inline mode:
-		// - <hsyoutube> (fromParserFunc = false) → default inline text
-		// - #hsytb      (fromParserFunc = true)  → default thumbnail
+		// - Tags (<hsyoutube>, <hsgytb>): default inline text
+		// - Parser function (#hsgytb): default thumbnail
 		$inlineMode = !$fromParserFunc;
 
 		if ( array_key_exists( 'inline', $attributes ) ) {
@@ -190,23 +215,23 @@ class HighslideGallery {
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
 			$s .= ' onclick="return hs.htmlExpand(this, window.videoOptions || {});"';
-			$s .= $dataCaptionAttr . '>';
+			$s .= $dataCaption . '>';
 			$s .= $titleEsc . '</a>';
 		} else {
 			// THUMBNAIL LINK
 			$thumbUrl = 'https://img.youtube.com/vi/' . rawurlencode( $code ) . '/hqdefault.jpg';
 			$style    = '';
-	
+
 			if ( $width > 0 ) {
 				$style = ' style="max-width: ' . $width . 'px; height: auto; width: auto;"';
 			}
-	
-			$s  = '<a class="highslide link-youtube hsg-yt-thumb"';
+
+			$s  = '<a class="highslide link-youtube hsg-ytb-thumb"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
 			$s .= ' onclick="return hs.htmlExpand(this, window.videoOptions || {});"';
-			$s .= $dataCaptionAttr . '>';
-			$s .= '<img class="hsimg hsg-yt-thumb-img" src="' .
+			$s .= $dataCaption . '>';
+			$s .= '<img class="hsimg hsg-ytb-thumb-img" src="' .
 				htmlspecialchars( $thumbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
 				'" alt="' . $titleEsc . '"' . $style . ' />';
 			$s .= '</a>';
@@ -216,39 +241,39 @@ class HighslideGallery {
 		// the caption will be injected via hs.captionText in JS.
 		return $s;
 	}
-	
+
 	/**
 	 * Parser function wrapper for YouTube:
-	 *   {{#hsytb: https://www.youtube.com/watch?v=CODE | title=... | caption=... | autoplay }}
-	 *   {{#hsytb: CODE | title=... | caption=... | autoplay }}
+	 *   {{#hsgytb: https://www.youtube.com/watch?v=CODE | title=... | caption=... | autoplay }}
+	 *   {{#hsgytb: CODE | title=... | caption=... | autoplay }}
 	 *
 	 * First non-empty param = URL/content (even if it contains '=').
 	 * Remaining params:
 	 *   - "key=value" → $attributes[key] = value
 	 *   - "autoplay"  → $attributes['autoplay'] = true
 	 */
-	public static function MakeYouTubeParserFunc( Parser $parser, ...$params ) {
+	public static function MakeYouTubeParserFunction( Parser $parser, ...$params ) {
 		$content    = '';
 		$attributes = [];
-	
+
 		foreach ( $params as $raw ) {
 			$raw = trim( (string)$raw );
 			if ( $raw === '' ) {
 				continue;
 			}
-	
+
 			if ( $content === '' ) {
 				// First non-empty param is always the URL/content, even if it has '='.
 				$content = $raw;
 				continue;
 			}
-	
+
 			$pos = strpos( $raw, '=' );
-	
+
 			if ( $pos !== false ) {
 				$key   = trim( substr( $raw, 0, $pos ) );
 				$value = trim( substr( $raw, $pos + 1 ) );
-	
+
 				if ( $key !== '' ) {
 					$attributes[$key] = $value;
 				}
@@ -257,14 +282,14 @@ class HighslideGallery {
 				$attributes[$raw] = true;
 			}
 		}
-	
+
 		if ( $content === '' ) {
 			return '';
 		}
-	
+
 		// Note the final "true" → called from parser function
 		$html = self::MakeYouTubeLink( $content, $attributes, $parser, null, true );
-	
+
 		return [
 			$html,
 			'noparse' => true,
@@ -272,7 +297,18 @@ class HighslideGallery {
 		];
 	}
 
-	public static function MakeExtLink( $parser, $hsid, $width, $title, $content ) {
+	/**
+	 * External image helper behind:
+	 *   - {{#hsimg: …}}   (legacy)
+	 *   - {{#hsgimg: …}}  (canonical)
+	 *
+	 * @param Parser $parser
+	 * @param string $hsgIdParam  Group identifier (Highslide gallery id)
+	 * @param int    $width       Max width (px)
+	 * @param string $title       Caption/title
+	 * @param string $content     Image URL
+	 */
+	public static function MakeExternalImageLink( $parser, $hsgIdParam, $width, $title, $content ) {
 		// Accept either ordered params or named params; keep old behavior.
 		if ( $content === '' && $title === '' ) {
 			return false;
@@ -280,44 +316,47 @@ class HighslideGallery {
 		if ( $content === '' ) {
 			$content = $title;
 		}
-	
+
 		$caption = $title ?: $content;
-	
-		$hrefEsc = htmlspecialchars( $content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-		// We'll override alt text later in AddHighslide to match label | caption.
+
+		$hrefEsc    = htmlspecialchars( $content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 		$captionEsc = htmlspecialchars( $caption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-	
+
 		$hs    = '<a href="' . $hrefEsc . '" class="image highslide-link" title="' . $captionEsc . '">';
 		$hsimg = '<img class="hsimg" src="' . $hrefEsc . '" alt="' . $captionEsc . '"';
-	
-		$w = (int) $width;
+
+		$w = (int)$width;
 		if ( $w > 0 ) {
 			// Make caller width authoritative over any theme CSS.
 			$hsimg .= ' style="max-width: ' . $w . 'px !important; height: auto; width: auto;"';
 		}
-	
-		if ( $hsid !== '' ) {
+
+		if ( $hsgIdParam !== '' ) {
 			// Explicit group id → multi-image gallery if reused.
-			self::$hgID    = $hsid;
-			self::$hgLabel = $hsid;
+			self::$hsgId    = $hsgIdParam;
+			self::$hsgLabel = $hsgIdParam;
 		} else {
 			// No id → force a fresh per-image group in AddHighslide().
-			self::$hgID    = null;
-			self::$hgLabel = null;
+			self::$hsgId    = null;
+			self::$hsgLabel = null;
 		}
-	
+
 		$s = $hs . $hsimg . ' /></a>';
 		self::AddHighslide( $s, null, $caption, null );
 		return [ $s, 'isHTML' => true ];
 	}
 
+	/**
+	 * Core decorator: take an <a><img></a> thumb string and attach Highslide
+	 * semantics (slideshowGroup, caption text, MediaViewer shielding, etc.).
+	 */
 	private static function AddHighslide( &$s, $file, $caption, $title ) {
 		// Derive base label:
-		//   - if we have an explicit hgLabel (id), use it;
+		//   - if we have an explicit hsgLabel (id), use it;
 		//   - else if there's a File object, use its name;
 		//   - else fall back to the raw caption or a generic label.
-		if ( self::$hgLabel !== null && self::$hgLabel !== '' ) {
-			$label = self::$hgLabel;
+		if ( self::$hsgLabel !== null && self::$hsgLabel !== '' ) {
+			$label = self::$hsgLabel;
 		} elseif ( $file ) {
 			$label = $file->getName();
 		} elseif ( $caption !== '' ) {
@@ -350,49 +389,61 @@ class HighslideGallery {
 		}
 
 		// Ensure gallery/group id and decide whether this is a multi-image gallery member.
-		if ( self::$hgID === null ) {
+		if ( self::$hsgId === null ) {
 			// No explicit id: each call gets its own unique group → single-member galleries.
-			self::$hgID      = uniqid( 'hsg-', true );
-			self::$isGallery = false;
+			self::$hsgId            = uniqid( 'hsg-', true );
+			self::$isHsgGroupMember = false;
 		} else {
 			// Explicit id: if it's the same as the last group, this is a gallery member;
 			// if it's new, treat this as the first image in a new gallery.
-			if ( self::$lastGroupID !== null && self::$lastGroupID === self::$hgID ) {
-				self::$isGallery = true;   // same group as previous
+			if ( self::$lastHsgGroupId !== null && self::$lastHsgGroupId === self::$hsgId ) {
+				self::$isHsgGroupMember = true;   // same group as previous
 			} else {
-				self::$isGallery = false;  // first in this id's group
+				self::$isHsgGroupMember = false;  // first in this id's group
 			}
 		}
 		// Remember this group for next call on the page.
-		self::$lastGroupID = self::$hgID;
+		self::$lastHsgGroupId = self::$hsgId;
 
 		// Prepare JS options safely using JSON (avoids breaking on quotes).
 		$opts = [
-			'slideshowGroup' => (string) self::$hgID,
-			'captionText'    => $captionHtml, // already HTML; Highslide treats caption as HTML fragment
+			'slideshowGroup' => (string)self::$hsgId,
+			// Already HTML; Highslide treats caption as HTML fragment.
+			'captionText'    => $captionHtml,
 		];
 		// Let Highslide's global hs.numberPosition decide where the index appears
 		// (we set it to 'caption' in highslide.cfg.js).
-		$optsJson = htmlspecialchars( FormatJson::encode( $opts ), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$optsJson = htmlspecialchars(
+			FormatJson::encode( $opts ),
+			ENT_QUOTES | ENT_SUBSTITUTE,
+			'UTF-8'
+		);
 
-		$prefix = 'id="' . htmlspecialchars( (string) self::$hgID, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
+		$prefix = 'id="' . htmlspecialchars( (string)self::$hsgId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
 			'" onclick="return hs.expand(this, ' . $optsJson . ')" href';
 
-		// If this is a multi-image gallery member, ensure wikigallery class is present on the <img>.
-		if ( self::$isGallery ) {
+		// If this is a multi-image gallery member, ensure both:
+		//   - legacy `.wikigallery` (BC for old CSS)
+		//   - canonical `.hsg-gallery` (HSG-specific hook)
+		if ( self::$isHsgGroupMember ) {
 			if ( preg_match( '/<img[^>]*\sclass="/i', $s ) ) {
 				$s = preg_replace(
 					'/(<img[^>]*\sclass=")([^"]*)"/i',
-					'\\1wikigallery \\2"',
+					'\\1hsg-gallery wikigallery \\2"',
 					$s,
 					1
 				);
 			} else {
-				$s = preg_replace( '/<img /i', '<img class="wikigallery" ', $s, 1 );
+				$s = preg_replace(
+					'/<img /i',
+					'<img class="hsg-gallery wikigallery" ',
+					$s,
+					1
+				);
 			}
 		}
 
-		// === NEW: tell MediaViewer (and friends) to stay out of HSG thumbs ===
+		// Tell MediaViewer (and friends) to stay out of HSG thumbs.
 		// MediaViewer checks `$thumb.closest('.noviewer')` — so ensure the outer link has `noviewer`.
 		// Also add a stable `hsg-thumb` marker for any future "no overlay" gadgets.
 		if ( preg_match( '/<a[^>]*\sclass="/i', $s ) ) {
@@ -434,6 +485,6 @@ class HighslideGallery {
 		}
 
 		// Reset per-call gallery flag.
-		self::$isGallery = false;
+		self::$isHsgGroupMember = false;
 	}
 }

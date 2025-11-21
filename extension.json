@@ -4,7 +4,7 @@
 	"author": ["Brian McCloskey", "David Van Winkle"],
 	"license-name": "GPL-2.0",
 	"url": "https://www.mediawiki.org/wiki/Extension:HighslideGallery",
-	"descriptionmsg": "hg-desc",
+	"descriptionmsg": "hsg-desc",
 	"type": "parserhook",
 	"requires": { "MediaWiki": ">= 1.39.0" },
 	"MessagesDirs": { "HighslideGallery": [ "i18n" ] },

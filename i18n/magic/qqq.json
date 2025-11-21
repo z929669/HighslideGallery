@@ -1,6 +1,0 @@
-{
-	"magicwords": {
-		"hsimg": "Parser function name used as {{#hsimg:File|width|caption}}.",
-		"hsytb": "Parser function name used as {{#hsytb:URL|title|caption|autoplay}}."
-	}
-}

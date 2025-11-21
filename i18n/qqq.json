@@ -1,4 +1,11 @@
 {
-	"@metadata": { "authors": ["Brian McCloskey", "David Van Winkle"] },
-	"hg-desc": "Description shown on Special:Version for the HighslideGallery extension."
+	"@metadata": {
+		"authors": [
+			"Brian McCloskey",
+			"David Van Winkle"
+		]
+	},
+	"hsg-desc": "Extension description shown on Special:Version.",
+	"hsgimg-desc": "Description for the external image helper parser function.",
+	"hsgytb-desc": "Description for the YouTube helper parser function."
 }
