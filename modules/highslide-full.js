@@ -3041,8 +3041,10 @@ hs.Slideshow = function (expKey, options) {
 };
 hs.Slideshow.prototype = {
 getControls: function() {
+	// Create controls detached initially to avoid briefly rendering the
+	// controlbar at the page origin (0,0) before overlays are positioned.
 	this.controls = hs.createElement('div', { innerHTML: hs.replaceLang(hs.skin.controls) }, 
-		null, hs.container);
+		null, null);
 	
 	var buttons = ['play', 'pause', 'previous', 'next', 'move', 'full-expand', 'close'];
 	this.btn = {};
