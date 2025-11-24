@@ -3,3 +3,4 @@
 /vendor/
 *.patch
 .github/*
+.vscode/*

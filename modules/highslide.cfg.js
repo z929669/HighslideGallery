@@ -126,6 +126,31 @@ hs.addSlideshow( {
 	}
 } );
 
+/* 
+ * Prevent slideshow "Play" and manual Next from closing the expander
+ * when there is no next/previous slide. Instead, stop autoplay and stay
+ * on the current image.
+ */
+if (typeof hs.transit === 'function' && !hs._hsgPatchedTransit) {
+	hs._hsgPatchedTransit = true;
+	hs._hsgOrigTransit = hs.transit;
+
+	hs.transit = function (adj, exp) {
+		// No adjacent anchor → end of gallery in this direction.
+		if (!adj) {
+			// If autoplay is running, pause it so controls reflect reality.
+			if (exp && exp.slideshow && typeof exp.slideshow.pause === 'function') {
+				exp.slideshow.pause();
+			}
+			// Keep the current expander open.
+			return false;
+		}
+
+		// Normal case: delegate to original behaviour.
+		return hs._hsgOrigTransit(adj, exp);
+	};
+}
+
 /*
  * Slideshow for YouTube (group "videos", no extra controls).
  * Group name is a configuration constant shared with `videoOptions.slideshowGroup`.
