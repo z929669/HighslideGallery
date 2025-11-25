@@ -180,8 +180,49 @@ var videoOptions = {
 	wrapperClassName: 'you-tube hsg-frame',
 	allowSizeReduction: false,
 	preserveContent: false,
-	outlineType: 'drop-shadow',
+	outlineType: null, // avoid drop-shadow table on iframe popups
 	numberPosition: null
 };
 
 window.videoOptions = videoOptions;
+
+/*
+ * Per-click helper for YouTube expanders so they can join image galleries.
+ * Reads data-hsgid (slideshowGroup) and data-hsg-caption (captionText) off
+ * the anchor and merges them into a clone of videoOptions.
+ */
+window.hsgOpenYouTube = function ( anchor, baseOptions ) {
+	if ( typeof hs === 'undefined' || !anchor ) {
+		return true;
+	}
+
+	var opts = {};
+	var source = (baseOptions && typeof baseOptions === 'object')
+		? baseOptions
+		: window.videoOptions;
+
+	if ( source ) {
+		for ( var k in source ) {
+			if ( Object.prototype.hasOwnProperty.call( source, k ) ) {
+				opts[k] = source[k];
+			}
+		}
+	}
+
+	var caption = anchor.getAttribute( 'data-hsg-caption' ) || anchor.getAttribute( 'title' );
+	if ( caption ) {
+		opts.captionText = caption;
+	}
+
+	var hsgId = anchor.getAttribute( 'data-hsgid' ) || anchor.getAttribute( 'data-hsg-group' );
+	if ( hsgId ) {
+		opts.slideshowGroup = hsgId;
+	}
+
+	// Align numbering position with images when grouping is enabled.
+	if ( !opts.numberPosition ) {
+		opts.numberPosition = hs.numberPosition || 'caption';
+	}
+
+	return hs.htmlExpand( anchor, opts );
+};

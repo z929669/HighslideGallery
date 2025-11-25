@@ -209,13 +209,34 @@ class HighslideGallery {
 
 		$href = 'https://www.youtube.com/embed/' . rawurlencode( $code ) . '?' . implode( '&', $query );
 
+		// Optional gallery id so YT tiles can join image galleries (slideshowGroup).
+		$groupId = null;
+		if ( isset( $attributes['hsgid'] ) && $attributes['hsgid'] !== '' ) {
+			$groupIdCandidate = trim( (string)$attributes['hsgid'] );
+			if ( preg_match( '/^[A-Za-z0-9_\/-]+$/', $groupIdCandidate ) ) {
+				$groupId = $groupIdCandidate;
+			}
+			unset( $attributes['hsgid'] );
+		} elseif ( isset( $attributes['id'] ) && $attributes['id'] !== '' ) {
+			// Legacy/short name.
+			$groupIdCandidate = trim( (string)$attributes['id'] );
+			if ( preg_match( '/^[A-Za-z0-9_\/-]+$/', $groupIdCandidate ) ) {
+				$groupId = $groupIdCandidate;
+			}
+			unset( $attributes['id'] );
+		}
+
+		$dataGroup = $groupId !== null
+			? ' data-hsgid="' . htmlspecialchars( $groupId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"'
+			: '';
+
 		if ( $inlineMode ) {
-			// INLINE TEXT LINK – always invoke Highslide via inline onclick.
+			// INLINE TEXT LINK - always invoke Highslide via inline onclick.
 			$s  = '<a class="highslide link-youtube"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
-			$s .= ' onclick="return hs.htmlExpand(this, window.videoOptions || {});"';
-			$s .= $dataCaption . '>';
+			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.videoOptions || {});"';
+			$s .= $dataCaption . $dataGroup . '>';
 			$s .= $titleEsc . '</a>';
 		} else {
 			// THUMBNAIL LINK
@@ -229,8 +250,8 @@ class HighslideGallery {
 			$s  = '<a class="highslide link-youtube hsg-ytb-thumb"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
-			$s .= ' onclick="return hs.htmlExpand(this, window.videoOptions || {});"';
-			$s .= $dataCaption . '>';
+			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.videoOptions || {});"';
+			$s .= $dataCaption . $dataGroup . '>';
 			$s .= '<img class="hsimg hsg-ytb-thumb-img" src="' .
 				htmlspecialchars( $thumbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
 				'" alt="' . $titleEsc . '"' . $style . ' />';
@@ -362,7 +383,7 @@ class HighslideGallery {
 		} elseif ( $caption !== '' ) {
 			$label = $caption;
 		} else {
-			$label = 'Image';
+			$label = 'Member';
 		}
 
 		// Compute the display string used for the Highslide caption and alt text.

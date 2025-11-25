@@ -188,9 +188,23 @@ a.link-youtube::after {
 	content: none;
 }
 
-/* YouTube popup shell – "you-tube" is a shipped/public name and preserved */
+/* YouTube popup shell - "you-tube" is a shipped/public name and preserved */
 .you-tube .highslide-footer { display: none; }
-.you-tube .highslide-html { background-color: (--hsg-ytb-bg, #000); }
+.you-tube .highslide-html { background-color: var(--hsg-ytb-bg, #000); }
 .you-tube .highslide-html-content { padding: 0; }
+.you-tube .highslide-html,
+.you-tube .highslide-html-content,
+.you-tube .highslide-html-content table,
+.you-tube .highslide-html-content td,
+.you-tube .highslide-html-content tr,
+.you-tube .highslide-outline,
+.you-tube .highslide-outline table,
+.you-tube .highslide-outline td,
+.you-tube .highslide-outline tr {
+	background: var(--hsg-ytb-bg, #000) !important;
+	border: 0 !important;
+	padding: 0 !important;
+	margin: 0 !important;
+}
 .you-tube .highslide-header,
 .you-tube .highslide-move { display: none; }
