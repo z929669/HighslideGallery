@@ -21,7 +21,7 @@
  * Vendor:
  *   - `hs` and its properties
  *   - `.highslide-*`, `.you-tube`, `.link-youtube`
- *   - `videoOptions` as the base options object
+ *   - `hsgVideoOptions` as the base options object
  *
  * HSG:
  *   - All `hsg-*` classes (e.g. `hsg-frame`)
@@ -63,12 +63,17 @@ hs.transitions			= [];
 hs.allowSizeReduction	= true;
 hs.showCredits			= false;
 hs.outlineWhileAnimating= true;
+// Allow custom thumbnailId (used for inline text links with hidden thumb proxies)
+if ( Array.isArray( hs.overrides ) && hs.overrides.indexOf( 'thumbnailId' ) === -1 ) {
+	hs.overrides.push( 'thumbnailId' );
+}
 
 // Do not close when clicking the image itself; use controls/dimmer instead.
 hs.closeOnClick			= false;
 
 // Show image index in the caption area (vendor feature, configured here).
 hs.numberPosition		= 'caption';
+hs.lang.number			= 'Member %1 of %2'
 
 // Cancel Highslide's default "click image to close".
 if ( hs.Expander && hs.Expander.prototype ) {
@@ -153,7 +158,7 @@ if (typeof hs.transit === 'function' && !hs._hsgPatchedTransit) {
 
 /*
  * Slideshow for YouTube (group "videos", no extra controls).
- * Group name is a configuration constant shared with `videoOptions.slideshowGroup`.
+ * Group name is a configuration constant shared with `hsgVideoOptions.slideshowGroup`.
  */
 hs.addSlideshow( {
 	slideshowGroup: 'videos',
@@ -162,19 +167,30 @@ hs.addSlideshow( {
 	fixedControls: false
 } );
 
+// Prefer image content for thumbstrip items (handles inline text links with hidden img proxies).
+hs.stripItemFormatter = function ( anchor ) {
+	if ( anchor && anchor.querySelector ) {
+		var img = anchor.querySelector( 'img' );
+		if ( img && img.src ) {
+			return '<img src="' + img.src + '" alt="" />';
+		}
+	}
+	return anchor ? anchor.innerHTML : '';
+};
+
 // -------------------------------------------------------------------------
 // Video options (used by hs.htmlExpand via MakeYouTubeLink / hsgytb)
 // -------------------------------------------------------------------------
 
 /*
- * `videoOptions` is kept as the vendor-style base object. HSG code
+ * `hsgVideoOptions` is kept as the vendor-style base object. HSG code
  * may later wrap or clone this (e.g. via `hsgGetVideoOptions`) but
- * the canonical global name remains `videoOptions`.
+ * the canonical global name remains `hsgVideoOptions`.
  */
-var videoOptions = {
+var hsgVideoOptions = {
 	slideshowGroup: 'videos',
 	objectType: 'iframe',
-	width: 720,
+	width: 720,  // used as a baseline; auto-fit will override per click
 	height: 480,
 	// `you-tube` is a vendor skin hook; `hsg-frame` is HSG-specific.
 	wrapperClassName: 'you-tube hsg-frame',
@@ -184,12 +200,13 @@ var videoOptions = {
 	numberPosition: null
 };
 
-window.videoOptions = videoOptions;
+window.hsgVideoOptions = hsgVideoOptions;
 
 /*
  * Per-click helper for YouTube expanders so they can join image galleries.
  * Reads data-hsgid (slideshowGroup) and data-hsg-caption (captionText) off
- * the anchor and merges them into a clone of videoOptions.
+ * the anchor and merges them into a clone of hsgVideoOptions. Also sizes the
+ * iframe to a best-fit 16:9 box within the current viewport and HS margins.
  */
 window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 	if ( typeof hs === 'undefined' || !anchor ) {
@@ -199,7 +216,7 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 	var opts = {};
 	var source = (baseOptions && typeof baseOptions === 'object')
 		? baseOptions
-		: window.videoOptions;
+		: window.hsgVideoOptions;
 
 	if ( source ) {
 		for ( var k in source ) {
@@ -224,5 +241,108 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 		opts.numberPosition = hs.numberPosition || 'caption';
 	}
 
+	// Viewport-aware sizing (16:9 best fit within HS margins).
+	var page = hs.getPageSize ? hs.getPageSize() : { width: 0, height: 0 };
+	var marginW = (hs.marginLeft || 0) + (hs.marginRight || 0);
+	var marginH = (hs.marginTop || 0) + (hs.marginBottom || 0);
+	var maxW = Math.max(320, page.width - marginW - 20);
+	var maxH = Math.max(180, page.height - marginH - 20);
+
+	var aspect = (opts.width && opts.height) ? (opts.width / opts.height) : (16 / 9);
+	var fitW = Math.min(maxW, Math.floor(maxH * aspect));
+	var fitH = Math.min(maxH, Math.floor(fitW / aspect));
+
+	opts.width = fitW;
+	opts.height = fitH;
+
 	return hs.htmlExpand( anchor, opts );
 };
+
+// -------------------------------------------------------------------------
+// DOM cleanup: prevent MediaWiki thumb float on HSG thumbs (e.g. when templates
+// are used inside lists and MW wraps the first item in a floated thumb).
+// -------------------------------------------------------------------------
+
+function hsgFixThumbFloat( root ) {
+	var scope = root || document;
+	var anchors = scope.querySelectorAll( '.thumb.tright .hsg-thumb, .thumb.tleft .hsg-thumb' );
+
+	anchors.forEach( function ( a ) {
+		var container = a.closest( '.thumb' );
+		if ( !container || container.classList.contains( 'hsg-thumb-normalized' ) ) {
+			return;
+		}
+
+		container.classList.add( 'hsg-thumb-normalized' );
+		container.classList.remove( 'tright', 'tleft' );
+	} );
+}
+
+// Normalize list-based galleries: when an empty gallery block sits inside a list
+// item and real gallery blocks follow, move those gallery blocks into the list
+// item so bullets align and items render side by side.
+function hsgFixListGalleries( root ) {
+	var scope = root || document;
+	var placeholders = scope.querySelectorAll( 'ul > li > .gallery.text-break' );
+
+	placeholders.forEach( function ( placeholder ) {
+		// Only care about empty placeholders (no thumb inside).
+		if ( placeholder.querySelector( '.thumb' ) ) {
+			return;
+		}
+
+		var li = placeholder.parentElement;
+		if ( !li || li.tagName !== 'LI' ) {
+			return;
+		}
+
+		var ul = li.parentElement;
+		if ( !ul || ul.tagName !== 'UL' ) {
+			return;
+		}
+
+		// Collect subsequent siblings after the UL that are gallery blocks or standalone thumbs.
+		var collected = [];
+		var next = ul.nextElementSibling;
+		while ( next ) {
+			var isGallery = next.classList && next.classList.contains( 'gallery' ) && next.classList.contains( 'text-break' );
+			var isThumb = next.classList && next.classList.contains( 'thumb' );
+
+			if ( isGallery || isThumb ) {
+				collected.push( next );
+				next = next.nextElementSibling;
+				continue;
+			}
+			break; // stop on first non-gallery/non-thumb block
+		}
+
+		if ( collected.length === 0 ) {
+			return;
+		}
+
+		// Remove the empty placeholder gallery.
+		placeholder.remove();
+
+		// Wrapper to keep list marker intact while laying out children horizontally.
+		var wrap = document.createElement( 'div' );
+		wrap.className = 'hsg-list-gallery-wrap';
+
+		collected.forEach( function ( node ) {
+			wrap.appendChild( node );
+		} );
+
+		li.appendChild( wrap );
+	} );
+}
+
+if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
+	mw.hook( 'wikipage.content' ).add( function ( $content ) {
+		hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
+		hsgFixListGalleries( $content && $content[0] ? $content[0] : document );
+	} );
+} else {
+	document.addEventListener( 'DOMContentLoaded', function () {
+		hsgFixThumbFloat( document );
+		hsgFixListGalleries( document );
+	} );
+}

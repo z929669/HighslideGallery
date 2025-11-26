@@ -20,14 +20,28 @@
  */
 
 /* -------------------------------------------------------------------------
+ * Variables
+ * ------------------------------------------------------------------------- */
+:root {
+	--hsg-caption-number: #777;
+	--hsg-caption-text: #c0c0c0;
+	--hsg-frame-bg: #000;
+	--hsg-frame-border: #888;
+	--hsg-frame-shadow: rgba(0, 0, 0, 0.9);
+	--hsg-ts-border: #ff9012;
+	--hsg-ts-border-hover: #aaa;
+	--hsg-ytb-bg: #000;
+}
+
+/* -------------------------------------------------------------------------
  * Frame & caption tone
  * ------------------------------------------------------------------------- */
 
 /* Base frame used by HSG (images & YouTube) */
 .highslide-wrapper.hsg-frame {
-	background: var(--hsg-frame-bg, #111);
-	border: 3px solid var(--hsg-frame-border, #888);
-	box-shadow: 0 0 18px 0px var(--hsg-frame-shadow, #000);
+	background: var(--hsg-frame-bg);
+	border: none;
+	box-shadow: 0 0 18px 0px var(--hsg-frame-shadow);
 
 	/* Force horizontal centering in the viewport */
 	left: 50% !important;
@@ -35,8 +49,13 @@
 }
 
 /* Number + caption tone */
-.highslide-number  { color: var(--hsg-caption-number, #888); }
-.highslide-caption, .highslide-caption > .internal { color: var(--hsg-caption-text, #b0b0b0); }
+.highslide-number  {
+	color: var(--hsg-caption-number);
+}
+
+.highslide-caption, .highslide-caption > .internal {
+	color: var(--hsg-caption-text);
+}
 
 /* -------------------------------------------------------------------------
  * Controls & dimmer
@@ -57,8 +76,7 @@ a.highslide-full-expand {
 	background-color: rgba(0, 0, 0, 0.75) !important;
 }
 
-/* Gecko sometimes gets clever with viewport sizing; belt-and-suspenders
- * to ensure the dimmer actually covers the viewport in Firefox. */
+/* Ensure the dimmer covers the viewport in Firefox */
 @-moz-document url-prefix() {
 	.highslide-dimming.highslide-viewport-size {
 		position: fixed !important;
@@ -71,10 +89,9 @@ a.highslide-full-expand {
 
 /* Image edge glow + neutral cursor */
 .highslide-image {
-	box-shadow: 0 0 26px 12px var(--hsg-ytb-bg, #000);
+	box-shadow: 0 0 26px 12px var(--hsg-ytb-bg);
 	cursor: default !important;
-	border: 3px solid var(--hsg-frame-border, #888);
-	border-radius: 15px;
+	border: none;
 }
 
 /* Ensure the close control is visible and above the skin UI */
@@ -112,6 +129,7 @@ a.highslide-full-expand {
 
 .highslide-controls a {
 	padding: 0 6px;
+	height: 25px;
 }
 
 /* Breathing room above the viewport edge */
@@ -123,16 +141,20 @@ a.highslide-full-expand {
  * Thumbstrip tweaks
  * ------------------------------------------------------------------------- */
 
-.highslide-thumbstrip td { padding: 3px; }
+.highslide-thumbstrip td {
+	padding-bottom: 22px;
+}
 
 .highslide-thumbstrip-horizontal img {
-	height: 80px;           /* was 40px in vendor */
-	border: none !important;
+	/* Make thumbstrip thumbs uniform width; height follows aspect ratio */
+	width: 120px !important;
+	height: auto !important;
+	max-height: 80px;
+	border: none;
 }
 
 .highslide-viewport .highslide-thumbstrip-horizontal .highslide-marker {
-	top: 87px;
-	border-bottom-color: var(--hsg-ts-border-hover, #aaa);
+	border: none;
 }
 
 .highslide-thumbstrip-horizontal .highslide-scroll-up,
@@ -145,26 +167,54 @@ a.highslide-full-expand {
 /* Thumb opacity/hover state */
 .highslide-thumbstrip img {
 	opacity: 0.5;
-	border: 1px solid var(--hsg-frame-border, #888) !important;
+	border: 1px solid var(--hsg-frame-border) !important;
 }
 
 .highslide-thumbstrip img:hover {
 	opacity: 1;
-	border: 1px solid var(--hsg-ts-border-hover, #aaa) !important;
+	border: 1px solid var(--hsg-ts-border-hover) !important;
 }
 
 .highslide-thumbstrip .highslide-active-anchor img {
 	opacity: 1;
-	border: 1px solid var(--hsg-ts-border, #6a5d50) !important;
+	border: 1px solid var(--hsg-ts-border) !important;
+}
+
+.highslide img {
+	border: none;
+}
+
+/* Normalized thumb (JS-applied class) to remove default floats/margins */
+.hsg-thumb-normalized {
+	float: none;
+	margin: 0.5rem;
+}
+
+/* Gallery layout inside text-break containers (including list contexts) */
+.gallery.text-break {
+	display: inline-block;
+	vertical-align: top;
+	margin: 0.5rem;
+	padding: 0;
+}
+
+.gallery.text-break .thumb {
+	float: none;
+	display: block;
+	margin: 0;
+	vertical-align: top;
+}
+
+/* Flex wrapper for list-based galleries (JS-applied) */
+.hsg-list-gallery-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
 }
 
 /* -------------------------------------------------------------------------
  * YouTube link + popup tweaks
  * ------------------------------------------------------------------------- */
-
-.highslide img {
-	border: 2px solid var(--hsg-frame-border, #888);
-}
 
 .hsg-yt-thumb + .gallerytext {
 	background: url(youtube.png) center left no-repeat;
@@ -188,23 +238,20 @@ a.link-youtube::after {
 	content: none;
 }
 
-/* YouTube popup shell - "you-tube" is a shipped/public name and preserved */
-.you-tube .highslide-footer { display: none; }
-.you-tube .highslide-html { background-color: var(--hsg-ytb-bg, #000); }
-.you-tube .highslide-html-content { padding: 0; }
+/* YouTube popup shell */
+.you-tube .highslide-footer,
+.you-tube .highslide-header,
+.you-tube .highslide-move {
+	display: none;
+}
+
 .you-tube .highslide-html,
 .you-tube .highslide-html-content,
 .you-tube .highslide-html-content table,
 .you-tube .highslide-html-content td,
-.you-tube .highslide-html-content tr,
-.you-tube .highslide-outline,
-.you-tube .highslide-outline table,
-.you-tube .highslide-outline td,
-.you-tube .highslide-outline tr {
-	background: var(--hsg-ytb-bg, #000) !important;
+.you-tube .highslide-html-content tr {
+	background: var(--hsg-ytb-bg) !important;
 	border: 0 !important;
 	padding: 0 !important;
 	margin: 0 !important;
 }
-.you-tube .highslide-header,
-.you-tube .highslide-move { display: none; }

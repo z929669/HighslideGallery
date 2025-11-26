@@ -7,5 +7,6 @@
 	},
 	"hsg-desc": "HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.",
 	"hsgimg-desc": "External image helper for HighslideGallery.",
-	"hsgytb-desc": "YouTube helper for HighslideGallery."
+	"hsgytb-desc": "YouTube helper for HighslideGallery.",
+	"hsglink-desc": "Inline text link helper for HighslideGallery."
 }
