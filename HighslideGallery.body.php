@@ -51,6 +51,7 @@ class HighslideGallery {
 		// -----------------------------------------------------------------
 		// Parser functions
 		// -----------------------------------------------------------------
+		$parser->setFunctionHook( 'hsglink', [ self::class, 'MakeInlineLink' ] );
 		$parser->setFunctionHook( 'hsgimg', [ self::class, 'MakeExternalImageLink' ] );
 		$parser->setFunctionHook( 'hsgytb', [ self::class, 'MakeYouTubeParserFunction' ] );
 
@@ -156,10 +157,16 @@ class HighslideGallery {
 		}
 
 		$title    = $attributes['title'] ?? 'YouTube Video';
+		$linkText = $attributes['linktext'] ?? $title;
 		$titleEsc = htmlspecialchars( $title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$linkTextEsc = htmlspecialchars( $linkText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 
 		// Autoplay flag: presence of "autoplay" or "autoplay=..." is enough.
-		$autoplayOn = array_key_exists( 'autoplay', $attributes );
+		$autoplayOn = array_key_exists( 'autoplay', $attributes ) &&
+			$attributes['autoplay'] !== '' &&
+			$attributes['autoplay'] !== '0' &&
+			$attributes['autoplay'] !== 0 &&
+			$attributes['autoplay'] !== false;
 
 		// Width (used only for thumbnails).
 		$width = 0;
@@ -235,9 +242,9 @@ class HighslideGallery {
 			$s  = '<a class="highslide link-youtube"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
-			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.videoOptions || {});"';
+			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.hsgVideoOptions || {});"';
 			$s .= $dataCaption . $dataGroup . '>';
-			$s .= $titleEsc . '</a>';
+			$s .= $linkTextEsc . '</a>';
 		} else {
 			// THUMBNAIL LINK
 			$thumbUrl = 'https://img.youtube.com/vi/' . rawurlencode( $code ) . '/hqdefault.jpg';
@@ -250,7 +257,7 @@ class HighslideGallery {
 			$s  = '<a class="highslide link-youtube hsg-ytb-thumb"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
-			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.videoOptions || {});"';
+			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.hsgVideoOptions || {});"';
 			$s .= $dataCaption . $dataGroup . '>';
 			$s .= '<img class="hsimg hsg-ytb-thumb-img" src="' .
 				htmlspecialchars( $thumbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
@@ -261,6 +268,114 @@ class HighslideGallery {
 		// We no longer output a <div class="highslide-caption"> here;
 		// the caption will be injected via hs.captionText in JS.
 		return $s;
+	}
+
+	/**
+	 * Inline text link opener for images (File: or external URL).
+	 * Usage: {{#hsglink: <content> | hsgid=Foo | caption=Bar | linktext=Click me }}
+	 */
+	public static function MakeInlineLink( Parser $parser, ...$params ) {
+		$content    = '';
+		$attributes = [];
+
+		foreach ( $params as $raw ) {
+			$raw = trim( (string)$raw );
+			if ( $raw === '' ) {
+				continue;
+			}
+
+			if ( $content === '' ) {
+				$content = $raw;
+				continue;
+			}
+
+			$pos = strpos( $raw, '=' );
+
+			if ( $pos !== false ) {
+				$key   = trim( substr( $raw, 0, $pos ) );
+				$value = trim( substr( $raw, $pos + 1 ) );
+
+				if ( $key !== '' ) {
+					$attributes[$key] = $value;
+				}
+			}
+		}
+
+		if ( $content === '' ) {
+			return '';
+		}
+
+		$linkText = $attributes['linktext'] ?? $attributes['title'] ?? $attributes['caption'] ?? 'Image';
+		$linkTextEsc = htmlspecialchars( $linkText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+
+		$caption = $attributes['caption'] ?? $attributes['title'] ?? $linkText;
+		$captionEsc = htmlspecialchars( $caption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+
+		$groupId = $attributes['hsgid'] ?? $attributes['id'] ?? null;
+		$groupId = $groupId !== null ? trim( (string)$groupId ) : null;
+		if ( $groupId === '' ) {
+			$groupId = null;
+		}
+
+		$titleObj = null;
+		$fileObj  = null;
+		$href     = $content;
+		$thumbId  = uniqid( 'hsg-thumb-', true );
+
+		$titleObj = Title::newFromText( $content );
+		if ( $titleObj instanceof Title && $titleObj->inNamespace( NS_FILE ) ) {
+			$fileObj = \MediaWiki\MediaWikiServices::getInstance()
+				->getRepoGroup()
+				->findFile( $titleObj );
+			if ( $fileObj ) {
+				$href = $fileObj->getUrl();
+			}
+		}
+
+		// If no explicit group id, make a unique one.
+		if ( $groupId === null ) {
+			$groupId = uniqid( 'hsg-', true );
+		}
+
+		$captionHtml = $captionEsc;
+		if ( $titleObj instanceof Title ) {
+			$url = $titleObj->getLocalURL();
+			$captionHtml = "<a href='" .
+				htmlspecialchars( $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
+				"' class='internal'>" . $captionHtml . '</a>';
+		}
+
+		$opts = [
+			'slideshowGroup' => (string)$groupId,
+			'captionText'    => $captionHtml,
+			'thumbnailId'    => $thumbId,
+		];
+
+		$optsJson = htmlspecialchars(
+			FormatJson::encode( $opts ),
+			ENT_QUOTES | ENT_SUBSTITUTE,
+			'UTF-8'
+		);
+
+		$s  = '<a class="highslide hsg-inline hsg-thumb"';
+		$s .= ' id="' . htmlspecialchars( (string)$groupId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
+		$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
+		$s .= ' onclick="return hs.expand(this, ' . $optsJson . ');"';
+		$s .= ' title="' . $captionEsc . '"';
+		$s .= '>' . $linkTextEsc;
+		// Hidden thumb proxy so Highslide thumbstrip shows an image instead of text.
+		$s .= '<img id="' . htmlspecialchars( $thumbId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
+		$s .= ' class="hsg-inline-thumb-proxy"';
+		$s .= ' src="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
+		$s .= ' alt=""';
+		$s .= ' style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;" />';
+		$s .= '</a>';
+
+		return [
+			$s,
+			'noparse' => true,
+			'isHTML'  => true,
+		];
 	}
 
 	/**
