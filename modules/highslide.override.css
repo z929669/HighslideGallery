@@ -216,21 +216,28 @@ a.highslide-full-expand {
  * YouTube link + popup tweaks
  * ------------------------------------------------------------------------- */
 
-.hsg-yt-thumb + .gallerytext {
-	background: url(youtube.png) center left no-repeat;
-	padding-left: 1.25rem;
-	font-size: 0.8rem;
-}
-
 .gallerytext {
 	font-size: 0.8rem;
 	padding: 0.25rem
 }
 
+.hsg-inline {
+	background:
+		url("graphics/image-lite.svg") center left no-repeat,
+		url("graphics/image-lite.svg") center right no-repeat;
+	background-size: 1rem 1rem;
+	padding: 0 1.1rem 0 1.1rem;
+	margin: 0 0.1rem 0 0.1rem;
+}
+
 /* Decorate ONLY plain text YouTube links, not thumbs */
 a.link-youtube:not(.hsg-ytb-thumb) {
-	background: url(youtube.png) center right no-repeat;
-	padding-right: 18px;
+	background:
+		url("graphics/youtube.svg") center left no-repeat,
+		url("graphics/youtube.svg") center right no-repeat;
+	background-size: 1rem 1rem;
+	padding: 0 1.1rem 0 1.1rem;
+	margin: 0 0.1rem 0 0.1rem;
 }
 
 /* No ::after triangle at all */
