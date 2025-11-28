@@ -26,12 +26,31 @@ class HighslideGallery {
 	private static $hsgLabel;           // optional display label, derived from hsgid
 	private static $lastHsgGroupId;     // last slideshow group rendered on this page
 
+	private static function getControlsPreset(): string {
+		// Prefer explicit global override (LocalSettings.php).
+		if ( isset( $GLOBALS['wgHSGControlsPreset'] ) && is_string( $GLOBALS['wgHSGControlsPreset'] ) ) {
+			$val = trim( $GLOBALS['wgHSGControlsPreset'] );
+			if ( $val !== '' ) {
+				return $val;
+			}
+		}
+
+		// Fall back to registered config (extension.json default is "classic").
+		$config = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig();
+		$val = $config->get( 'wgHSGControlsPreset' );
+		return is_string( $val ) ? $val : 'classic';
+	}
+
 	public static function AddResources( OutputPage &$out, Skin &$skin ): void {
 		// Reset per-page state
 		self::$hsgId            = null;
 		self::$isHsgGroupMember = false;
 		self::$hsgLabel         = null;
 		self::$lastHsgGroupId   = null;
+
+		// Push the controls preset to mw.config on every page view.
+		$preset = self::getControlsPreset();
+		$out->addJsConfigVars( 'wgHSGControlsPreset', $preset );
 
 		// Let ResourceLoader handle highslide.js + cfg + CSS.
 		$out->addModules( 'ext.highslideGallery' );
@@ -42,7 +61,7 @@ class HighslideGallery {
 		// -----------------------------------------------------------------
 		// Tags
 		// -----------------------------------------------------------------
-		// Legacy tag – kept for backward compatibility
+		// Legacy tag - kept for backward compatibility
 		$parser->setHook( 'hsyoutube', [ self::class, 'MakeYouTubeLink' ] );
 
 		// Canonical HSG tag for YouTube (ytb = all things YouTube)
@@ -54,6 +73,19 @@ class HighslideGallery {
 		$parser->setFunctionHook( 'hsglink', [ self::class, 'MakeInlineLink' ] );
 		$parser->setFunctionHook( 'hsgimg', [ self::class, 'MakeExternalImageLink' ] );
 		$parser->setFunctionHook( 'hsgytb', [ self::class, 'MakeYouTubeParserFunction' ] );
+
+		return true;
+	}
+
+	/**
+	 * Expose selected config values to the client via mw.config.
+	 */
+	public static function onResourceLoaderGetConfigVars(
+		array &$vars,
+		string $skin,
+		Config $config
+	): bool {
+		$vars['wgHSGControlsPreset'] = self::getControlsPreset();
 
 		return true;
 	}

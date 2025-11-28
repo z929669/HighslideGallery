@@ -4,3 +4,4 @@
 *.patch
 .github/*
 .vscode/*
+.codex/*

@@ -47,6 +47,8 @@ hs.outlineType			= null; // CSS-driven frame
 hs.wrapperClassName		= 'hsg-frame floating-caption';
 hs.marginTop			= 40;
 hs.marginBottom			= 40;
+hs.marginLeft			= 40;
+hs.marginRight			= 40;
 
 /* No fades / transitions – snap in/out */
 hs.fadeInOut			= false;
@@ -100,6 +102,80 @@ hs.lang.restoreTitle =
 // -------------------------------------------------------------------------
 
 /*
+ * Control layout presets so swapping positions is a simple config change
+ * instead of manual CSS tweaks.
+ *
+ * Presets:
+ *   - classic: controls + thumbstrip anchored to the bottom of the viewport
+ *   - stacked-top: thumbstrip followed by controls above the expander
+ */
+var hsgControlLayoutPresets = {
+	classic: {
+		fixedControls: false,
+		overlayOptions: {
+			className: 'text-controls',
+			position: 'bottom center',
+			relativeTo: 'viewport',
+			offsetY: -3
+		},
+		thumbstrip: {
+			position: 'bottom center',
+			mode: 'horizontal',
+			relativeTo: 'viewport',
+			offsetY: 0
+		}
+	},
+	'stacked-top': {
+		fixedControls: false,
+		overlayOptions: {
+			className: 'text-controls',
+			position: 'top center',
+			relativeTo: 'expander',
+			offsetY: -27
+		},
+		thumbstrip: {
+			position: 'top center',
+			mode: 'horizontal',
+			relativeTo: 'expander',
+			offsetY: -102
+		}
+	}
+};
+
+function hsgSelectControlLayoutPreset() {
+	var presetName = 'classic';
+
+	if ( typeof mw !== 'undefined' && mw.config && typeof mw.config.get === 'function' ) {
+		var cfgPreset = mw.config.get( 'wgHSGControlsPreset' );
+		if ( typeof cfgPreset === 'string' && cfgPreset.trim() !== '' ) {
+			presetName = cfgPreset.trim().toLowerCase().replace( /[\s_]+/g, '-' );
+		}
+	}
+
+	if ( !Object.prototype.hasOwnProperty.call( hsgControlLayoutPresets, presetName ) ) {
+		presetName = 'classic';
+	}
+
+	var preset = hsgControlLayoutPresets[ presetName ];
+	var overlayOptions = Object.assign( {}, preset.overlayOptions || {} );
+	var thumbstripOptions = preset.thumbstrip
+		? Object.assign( {}, preset.thumbstrip )
+		: null;
+
+	overlayOptions.className = overlayOptions.className || 'text-controls';
+	if ( thumbstripOptions ) {
+		thumbstripOptions.mode = thumbstripOptions.mode || 'horizontal';
+	}
+
+	return {
+		name: presetName,
+		overlayOptions: overlayOptions,
+		thumbstrip: thumbstripOptions,
+		fixedControls: preset.fixedControls
+	};
+}
+
+/*
  * Global close overlay (images + HTML/iframe).
  * HSG-specific CSS hook: `.controls.close` is styled in highslide.override.css.
  */
@@ -115,23 +191,29 @@ hs.registerOverlay( {
  * Slideshow for images (controls + thumbstrip).
  * Uses vendor `.highslide-controls` and thumbstrip styles.
  */
-hs.addSlideshow( {
-	repeat: false,	// prev/next looping
-	useControls: true,
-	fixedControls: false,
-	overlayOptions: {
-		className: 'text-controls',
-		position: 'bottom center',
-		relativeTo: 'viewport'
-	},
-	thumbstrip: {
-		position: 'bottom center',
-		mode: 'horizontal',
-		relativeTo: 'viewport'
+function hsgConfigureImageSlideshow() {
+	if ( hs._hsgConfiguredSlideshow ) {
+		return;
 	}
-} );
+	hs._hsgConfiguredSlideshow = true;
 
-/* 
+	var hsgControlsPreset = hsgSelectControlLayoutPreset();
+
+	hs.addSlideshow( {
+		repeat: false,	// prev/next looping
+		useControls: true,
+		fixedControls: (typeof hsgControlsPreset.fixedControls !== 'undefined')
+			? hsgControlsPreset.fixedControls
+			: false,
+		overlayOptions: hsgControlsPreset.overlayOptions,
+		thumbstrip: hsgControlsPreset.thumbstrip
+	} );
+}
+
+// Configure immediately now that wgHSGControlsPreset is provided before module load.
+hsgConfigureImageSlideshow();
+
+/*
  * Prevent slideshow "Play" and manual Next from closing the expander
  * when there is no next/previous slide. Instead, stop autoplay and stay
  * on the current image.

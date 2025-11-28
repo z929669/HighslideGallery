@@ -22,10 +22,18 @@
 		"localBasePath": "modules",
 		"remoteExtPath": "HighslideGallery/modules"
 	},
+	"config": {
+		"wgHSGControlsPreset": {
+			"value": "classic",
+			"description": "HighslideGallery control + thumbstrip layout preset (e.g. classic, stacked-top).",
+			"public": true
+		}
+	},
 	"Hooks": {
 		"BeforePageDisplay": "HighslideGallery::AddResources",
 		"ImageBeforeProduceHTML": "HighslideGallery::MakeImageLink",
-		"ParserFirstCallInit": "HighslideGallery::AddHooks"
+		"ParserFirstCallInit": "HighslideGallery::AddHooks",
+		"ResourceLoaderGetConfigVars": "HighslideGallery::onResourceLoaderGetConfigVars"
 	},
 	"manifest_version": 2
 }
