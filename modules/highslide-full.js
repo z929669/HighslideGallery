@@ -717,6 +717,12 @@ mouseClickHandler : function(e)
 	if (exp && e.type == 'mousedown') {
 		if (e.target.form) return true;
 		var match = el.className.match(/highslide-(image|move|resize)/);
+
+		// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+		if (match && hs.fullExpandToggle && exp._hsgZoomed && match[1] == 'image') {
+			// When zoomed, drag the expander for panning instead of blocking on image clicks.
+			match[1] = 'move';
+		}
 		if (match) {
 			hs.dragArgs = { 
 				exp: exp , 
@@ -1310,8 +1316,14 @@ setSize: function(i) {
 	}
 	if (this.dim == 'x' && exp.overlayBox) exp.sizeOverlayBox(true);
 	if (this.dim == 'x' && exp.slideshow && exp.isImage) {
-		if (i == this.full) exp.slideshow.disable('full-expand');
-		else exp.slideshow.enable('full-expand');
+		// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+		if (!hs.fullExpandToggle) {
+			if (i == this.full) exp.slideshow.disable('full-expand');
+			else exp.slideshow.enable('full-expand');
+		} else {
+			// 2026-11-27 HSG: keep the control enabled for toggle mode
+			exp.slideshow.enable('full-expand');
+		}
 	}
 },
 setPos: function(i) {
@@ -2346,7 +2358,11 @@ initSlideshow : function() {
 	var key = ss.expKey = this.key;
 	
 	ss.checkFirstAndLast();
-	ss.disable('full-expand');
+
+	// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+	if (!hs.fullExpandToggle) ss.disable('full-expand');
+	else ss.enable('full-expand');
+
 	if (ss.controls) {
 		this.createOverlay(hs.extend(ss.overlayOptions || {}, {
 			overlayId: ss.controls,
@@ -2913,6 +2929,45 @@ doFullExpand : function () {
 	}
 },
 
+// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+toggleFullExpand : function () {
+	// If already zoomed, restore fit.
+	if (this._hsgZoomed && this._hsgFitBox) {
+		this.resizeTo(this._hsgFitBox.w, this._hsgFitBox.h);
+		this.moveTo(this._hsgFitBox.x, this._hsgFitBox.y);
+		this.doShowHide('hidden');
+		this._hsgZoomed = false;
+		return false;
+	}
+
+	// First zoom: cache fit box, then expand.
+	if (!hs.fireEvent(this, 'onDoFullExpand')) return;
+	if (this.fullExpandLabel) hs.discardElement(this.fullExpandLabel);
+	if (!this._hsgFitBox) {
+		this._hsgFitBox = {
+			w: this.x.size,
+			h: this.y.size,
+			x: this.x.pos,
+			y: this.y.pos
+		};
+	}
+
+	this.focus();
+	var xSize = this.x.size, ySize = this.y.size;
+	this.resizeTo(this.x.full, this.y.full);
+
+	var xpos = this.x.pos - (this.x.size - xSize) / 2;
+	if (xpos < hs.marginLeft) xpos = hs.marginLeft;
+
+	var ypos = this.y.pos - (this.y.size - ySize) / 2;
+	if (ypos < hs.marginTop) ypos = hs.marginTop;
+
+	this.moveTo(xpos, ypos);
+	this.doShowHide('hidden');
+	this._hsgZoomed = true;
+	return true;
+},
+
 
 afterClose : function () {
 	this.a.className = this.a.className.replace('highslide-active-anchor', '');
@@ -2935,6 +2990,9 @@ afterClose : function () {
 	hs.fireEvent(this, 'onAfterClose');
 	hs.expanders[this.key] = null;		
 	hs.reOrder();
+	// 2026-11-27 HSG: clear zoom state on close
+	this._hsgFitBox = null;
+	this._hsgZoomed = false;
 }
 
 };
@@ -3040,6 +3098,13 @@ hs.Slideshow = function (expKey, options) {
 	if (this.thumbstrip) this.thumbstrip = hs.Thumbstrip(this);
 };
 hs.Slideshow.prototype = {
+	// 2026-11-27 HSG: toggle label text when zooming
+	updateZoomLabel: function (zoomed) {
+		if (!this.btn || !this.btn['full-expand']) return;
+		var a = this.btn['full-expand'].getElementsByTagName('a')[0];
+		var span = a ? a.getElementsByTagName('span')[0] : null;
+		if (span) span.textContent = zoomed ? 'Fit' : '1:1';
+	},
 getControls: function() {
 	// Create controls detached initially to avoid briefly rendering the
 	// controlbar at the page origin (0,0) before overlays are positioned.
@@ -3120,7 +3185,16 @@ next: function() {
 },
 move: function() {},
 'full-expand': function() {
-	hs.getExpander().doFullExpand();
+	// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+	var exp = hs.getExpander();
+	if (!exp) return;
+	if (hs.fullExpandToggle && typeof exp.toggleFullExpand === 'function') {
+		// 2026-11-27 HSG: use toggle + label update
+		var zoomed = exp.toggleFullExpand();
+		this.updateZoomLabel(zoomed);
+		return;
+	}
+	exp.doFullExpand();
 },
 close: function() {
 	hs.close(this.btn.close);

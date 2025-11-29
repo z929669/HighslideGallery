@@ -45,12 +45,12 @@ hs.dimmingOpacity		= 0.75;
 hs.outlineType			= null; // CSS-driven frame
 // HSG-specific wrapper class; `floating-caption` is vendor CSS.
 hs.wrapperClassName		= 'hsg-frame floating-caption';
-hs.marginTop			= 40;
-hs.marginBottom			= 40;
-hs.marginLeft			= 40;
-hs.marginRight			= 40;
+hs.marginTop			= 60;
+hs.marginBottom			= 60;
+hs.marginLeft			= 60;
+hs.marginRight			= 60;
 
-/* No fades / transitions – snap in/out */
+/* No fades / transitions - snap in/out */
 hs.fadeInOut			= false;
 hs.expandDuration		= 0;
 hs.restoreDuration		= 0;
@@ -65,6 +65,10 @@ hs.transitions			= [];
 hs.allowSizeReduction	= true;
 hs.showCredits			= false;
 hs.outlineWhileAnimating= true;
+
+// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+hs.fullExpandToggle = true;
+
 // Allow custom thumbnailId (used for inline text links with hidden thumb proxies)
 if ( Array.isArray( hs.overrides ) && hs.overrides.indexOf( 'thumbnailId' ) === -1 ) {
 	hs.overrides.push( 'thumbnailId' );
@@ -83,6 +87,33 @@ if ( hs.Expander && hs.Expander.prototype ) {
 		// Returning false stops exp.close() in Highslide's mouse handler.
 		return false;
 	};
+
+	// 2025-11-27 HSG: disable zoom control for non-image content (e.g., videos)
+	if ( !hs._hsgPatchedFullForNonImages ) {
+		hs._hsgPatchedFullForNonImages = true;
+		var _hsgOrigAfterExpand = hs.Expander.prototype.afterExpand;
+		hs.Expander.prototype.afterExpand = function () {
+			if ( _hsgOrigAfterExpand ) {
+				_hsgOrigAfterExpand.apply( this, arguments );
+			}
+
+			if ( !this.slideshow || !this.slideshow.enable || !this.slideshow.disable ) {
+				return;
+			}
+
+			if ( this.isImage ) {
+				this.slideshow.enable( 'full-expand' );
+				if ( typeof this.slideshow.updateZoomLabel === 'function' ) {
+					this.slideshow.updateZoomLabel( !!this._hsgZoomed );
+				}
+			} else {
+				this.slideshow.disable( 'full-expand' );
+				if ( typeof this.slideshow.updateZoomLabel === 'function' ) {
+					this.slideshow.updateZoomLabel( false );
+				}
+			}
+		};
+	}
 }
 
 // -------------------------------------------------------------------------
