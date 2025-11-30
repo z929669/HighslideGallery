@@ -717,12 +717,11 @@ mouseClickHandler : function(e)
 	if (exp && e.type == 'mousedown') {
 		if (e.target.form) return true;
 		var match = el.className.match(/highslide-(image|move|resize)/);
-
-		// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
-		if (match && hs.fullExpandToggle && exp._hsgZoomed && match[1] == 'image') {
-			// When zoomed, drag the expander for panning instead of blocking on image clicks.
-			match[1] = 'move';
+		// 2025-11-28 HSG: when zoomed with toggle, force drag to pan image (keep wrapper fixed)
+		if (hs.fullExpandToggle && exp._hsgZoomed && exp.isImage) {
+			match = ['highslide-image', 'image'];
 		}
+
 		if (match) {
 			hs.dragArgs = { 
 				exp: exp , 
@@ -734,6 +733,12 @@ mouseClickHandler : function(e)
 				clickX: e.clientX, 
 				clickY: e.clientY
 			};
+			// 2025-11-29 HSG: capture pan offsets when zoomed images are active
+			if (hs.fullExpandToggle && exp._hsgZoomed && exp.isImage && exp.content && (match[1] == 'image' || match[1] == 'move')) {
+				hs.dragArgs.panReady = true;
+				hs.dragArgs.panStartLeft = parseInt(exp.content.style.left, 10) || 0;
+				hs.dragArgs.panStartTop  = parseInt(exp.content.style.top, 10) || 0;
+			}
 			
 			
 			hs.addEventListener(document, 'mousemove', hs.dragHandler);
@@ -758,13 +763,29 @@ mouseClickHandler : function(e)
 				hs.dragArgs.exp.content.style.cursor = hs.styleRestoreCursor;
 			var hasDragged = hs.dragArgs.hasDragged;
 			
-			if (!hasDragged &&!hs.hasFocused && !/(move|resize)/.test(hs.dragArgs.type)) {
-				if (hs.fireEvent(exp, 'onImageClick'))
-				exp.close();
-			} 
-			else if (hasDragged || (!hasDragged && hs.hasHtmlExpanders)) {
-				hs.dragArgs.exp.doShowHide('hidden');
+	if (!hasDragged &&!hs.hasFocused && !/(move|resize)/.test(hs.dragArgs.type)) {
+		if (hs.fireEvent(exp, 'onImageClick'))
+		exp.close();
+	} 
+	else if (hasDragged || (!hasDragged && hs.hasHtmlExpanders)) {
+		// 2025-11-29 HSG: avoid hiding overlays after pan/drag when zoom toggle is on
+		if (!(hs.fullExpandToggle && exp && exp._hsgZoomed && exp.isImage)) {
+			hs.dragArgs.exp.doShowHide('hidden');
+		} else {
+			// 2025-11-29 HSG: Keep overlays visible mid-pan
+			if (exp.wrapper) exp.wrapper.style.overflow = 'visible';
+			if (exp.overlayBox) {
+				exp.overlayBox.style.overflow = 'visible';
+				exp.overlayBox.style.display = 'block';
+				exp.overlayBox.style.visibility = 'visible';
+				exp.showOverlays();
 			}
+			if (exp.slideshow && exp.slideshow.controls) {
+				exp.slideshow.controls.style.display = 'block';
+				exp.slideshow.controls.style.visibility = 'visible';
+			}
+		}
+	}
 			
 			if (hs.dragArgs.exp.releaseMask) 
 				hs.dragArgs.exp.releaseMask.style.display = 'none';
@@ -805,8 +826,45 @@ dragHandler : function(e)
 	if (a.hasDragged && e.clientX > 5 && e.clientY > 5) {
 		if (!hs.fireEvent(exp, 'onDrag', a)) return false;
 		
-		if (a.type == 'resize') exp.resize(a);
-		else {
+		if (a.type == 'resize') {
+			exp.resize(a);
+		} else if (hs.fullExpandToggle && exp._hsgZoomed && exp.isImage && exp.content && a.panReady) {
+			// 2025-11-29 HSG: pan zoomed image inside its container; avoid moving wrapper
+			var img = exp.content;
+			var container = img.parentNode;
+			if (container && img.style) {
+				var startL = (a.panStartLeft || 0);
+				var startT = (a.panStartTop || 0);
+				var contW = container.offsetWidth || 0;
+				var contH = container.offsetHeight || 0;
+				var imgW = img.offsetWidth || contW;
+				var imgH = img.offsetHeight || contH;
+				var maxX = Math.max(0, imgW - contW);
+				var maxY = Math.max(0, imgH - contH);
+				var newL = startL + a.dX;
+				var newT = startT + a.dY;
+				if (newL > 0) newL = 0;
+				if (newL < -maxX) newL = -maxX;
+				if (newT > 0) newT = 0;
+				if (newT < -maxY) newT = -maxY;
+				img.style.left = newL + 'px';
+				img.style.top  = newT + 'px';
+				img.style.cursor = 'move';
+				container.style.overflow = 'hidden';
+				if (!container.style.position) container.style.position = 'relative';
+				if (exp.wrapper) exp.wrapper.style.overflow = 'visible';
+				if (exp.overlayBox) {
+					exp.overlayBox.style.overflow = 'visible';
+					exp.overlayBox.style.display = 'block';
+					exp.overlayBox.style.visibility = 'visible';
+					exp.showOverlays();
+				}
+				if (exp.slideshow && exp.slideshow.controls) {
+					exp.slideshow.controls.style.display = 'block';
+					exp.slideshow.controls.style.visibility = 'visible';
+				}
+			}
+		} else {
 			exp.moveTo(a.left + a.dX, a.top + a.dY);
 			if (a.type == 'image') exp.content.style.cursor = 'move';
 		}
@@ -1316,12 +1374,12 @@ setSize: function(i) {
 	}
 	if (this.dim == 'x' && exp.overlayBox) exp.sizeOverlayBox(true);
 	if (this.dim == 'x' && exp.slideshow && exp.isImage) {
-		// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+		// 2025-11-28 HSG: enable vendor zoom toggle (fit <-> 1:1) support
 		if (!hs.fullExpandToggle) {
 			if (i == this.full) exp.slideshow.disable('full-expand');
 			else exp.slideshow.enable('full-expand');
 		} else {
-			// 2026-11-27 HSG: keep the control enabled for toggle mode
+			// 2025-11-28 HSG: keep the control enabled for toggle mode
 			exp.slideshow.enable('full-expand');
 		}
 	}
@@ -2295,6 +2353,10 @@ afterExpand : function() {
 	this.mouseIsOver = this.x.pos < mX && mX < this.x.pos + this.x.get('wsize')
 		&& this.y.pos < mY && mY < this.y.pos + this.y.get('wsize');	
 	if (this.overlayBox) this.showOverlays();
+	// 2025-11-29 HSG: ensure controls/thumbstrip stay visible when zoom toggle is active
+	if (hs.fullExpandToggle && this.slideshow && this.slideshow.controls) {
+		this.slideshow.enable('full-expand');
+	}
 	hs.fireEvent(this, 'onAfterExpand');
 	
 },
@@ -2359,7 +2421,7 @@ initSlideshow : function() {
 	
 	ss.checkFirstAndLast();
 
-	// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+	// 2025-11-28 HSG: enable vendor zoom toggle (fit <-> 1:1) support
 	if (!hs.fullExpandToggle) ss.disable('full-expand');
 	else ss.enable('full-expand');
 
@@ -2693,6 +2755,8 @@ createOverlay : function (o) {
 	hs.push(this.overlays, hs.idCounter - 1);
 },
 positionOverlay : function(overlay) {
+	// 2025-11-29 HSG: avoid self-append during zoom/pan
+	if (overlay === this.overlayBox) return;
 	var p = overlay.position || 'middle center',
 		relToVP = (overlay.relativeTo == 'viewport'),
 		offX = overlay.offsetX,
@@ -2922,25 +2986,64 @@ doFullExpand : function () {
         if (ypos < hs.marginTop) ypos = hs.marginTop;
        
         this.moveTo(xpos, ypos);
-		this.doShowHide('hidden');
+		// 2025-11-29 HSG: flag zoomed state and prep image/container for panning
+		if (this.isImage && this.content) {
+			var cParent = this.content.parentNode;
+			if (cParent) {
+				cParent.style.overflow = 'hidden';
+				if (!cParent.style.position) cParent.style.position = 'relative';
+			}
+			this.content.style.position = 'absolute';
+			this.content.style.left = '0px';
+			this.content.style.top = '0px';
+			this.content.style.width = this.x.full + 'px';
+			this.content.style.height = this.y.full + 'px';
+		}
+		this._hsgZoomed = true;
 	
 	} catch (e) {
 		this.error(e);
 	}
 },
 
-// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+// 2025-11-29 HSG: panning for zoomed images
 toggleFullExpand : function () {
 	// If already zoomed, restore fit.
 	if (this._hsgZoomed && this._hsgFitBox) {
 		this.resizeTo(this._hsgFitBox.w, this._hsgFitBox.h);
 		this.moveTo(this._hsgFitBox.x, this._hsgFitBox.y);
-		this.doShowHide('hidden');
+		if (this.wrapper) {
+			this.wrapper.style.overflow = 'visible';
+			this.wrapper.style.width = this._hsgFitBox.w + 'px';
+			this.wrapper.style.height = this._hsgFitBox.h + 'px';
+		}
+		if (this.overlayBox) {
+			this.overlayBox.style.overflow = 'visible';
+			this.overlayBox.style.display = 'block';
+			this.overlayBox.style.visibility = 'visible';
+		}
 		this._hsgZoomed = false;
+		if (this.isImage && this.content) {
+			this.content.style.position = 'relative';
+			this.content.style.left = '0px';
+			this.content.style.top = '0px';
+			this.content.style.width = this._hsgFitBox.w + 'px';
+			this.content.style.height = this._hsgFitBox.h + 'px';
+		}
+		if (this.overlayBox) this.showOverlays();
+		if (this.slideshow && this.slideshow.controls) {
+			this.slideshow.controls.style.display = 'block';
+			this.slideshow.controls.style.visibility = 'visible';
+		}
+		if (this.slideshow && this.slideshow.thumbstrip && this.slideshow.thumbstrip.overlay) {
+			var tsFit = this.slideshow.thumbstrip.overlay;
+			tsFit.style.display = 'block';
+			tsFit.style.visibility = 'visible';
+		}
 		return false;
 	}
 
-	// First zoom: cache fit box, then expand.
+	// 2025-11-29 HSG: First zoom: cache fit box, then expand image inside a fixed viewport.
 	if (!hs.fireEvent(this, 'onDoFullExpand')) return;
 	if (this.fullExpandLabel) hs.discardElement(this.fullExpandLabel);
 	if (!this._hsgFitBox) {
@@ -2952,18 +3055,84 @@ toggleFullExpand : function () {
 		};
 	}
 
-	this.focus();
-	var xSize = this.x.size, ySize = this.y.size;
-	this.resizeTo(this.x.full, this.y.full);
-
-	var xpos = this.x.pos - (this.x.size - xSize) / 2;
-	if (xpos < hs.marginLeft) xpos = hs.marginLeft;
-
-	var ypos = this.y.pos - (this.y.size - ySize) / 2;
-	if (ypos < hs.marginTop) ypos = hs.marginTop;
-
-	this.moveTo(xpos, ypos);
-	this.doShowHide('hidden');
+	// 2025-11-29 HSG: Keep the wrapper at the fitted size/position; pan within.
+	this.resizeTo(this._hsgFitBox.w, this._hsgFitBox.h);
+	this.moveTo(this._hsgFitBox.x, this._hsgFitBox.y);
+	if (this.wrapper) {
+		// 2025-11-29 HSG: keep wrapper locked to fit box; image pans inside
+		this.wrapper.style.overflow = 'hidden';
+		this.wrapper.style.width = this._hsgFitBox.w + 'px';
+		this.wrapper.style.height = this._hsgFitBox.h + 'px';
+	}
+	if (this.overlayBox) {
+		this.overlayBox.style.overflow = 'visible';
+		this.overlayBox.style.display = 'block';
+		this.overlayBox.style.visibility = 'visible';
+	}
+	if (this.isImage && this.content) {
+		var container = this.content.parentNode;
+		if (container) {
+			container.style.overflow = 'hidden';
+			if (!container.style.position) container.style.position = 'relative';
+			container.style.width = this._hsgFitBox.w + 'px';
+			container.style.height = this._hsgFitBox.h + 'px';
+		}
+		this.content.style.position = 'absolute';
+		this.content.style.left = '0px';
+		this.content.style.top = '0px';
+		this.content.style.width = this.x.full + 'px';
+		this.content.style.height = this.y.full + 'px';
+	}
+	// 2025-11-29 HSG: Keep overlays visible when zoomed
+	this.doShowHide('visible');
+	if (this.overlayBox) {
+		this.overlayBox.style.display = 'block';
+		this.overlayBox.style.visibility = 'visible';
+		this.showOverlays();
+		// 2025-11-29 HSG: force overlay children visible after zoom-in
+		var kids = this.overlayBox.childNodes || [];
+		for (var i = 0; i < kids.length; i++) {
+			if (kids[i] && kids[i].style) {
+				kids[i].style.display = 'block';
+				kids[i].style.visibility = 'visible';
+			}
+		}
+	}
+	// 2025-11-29 HSG: force control + strip overlays visible when zoomed
+	if (this.slideshow && this.slideshow.controls) {
+		this.slideshow.controls.style.display = 'block';
+		this.slideshow.controls.style.visibility = 'visible';
+		this.slideshow.controls.style.overflow = 'visible';
+		this.slideshow.controls.style.zIndex = 5;
+	}
+	if (this.slideshow && this.slideshow.thumbstrip && this.slideshow.thumbstrip.overlay) {
+		var ts = this.slideshow.thumbstrip.overlay;
+		ts.style.display = 'block';
+		ts.style.visibility = 'visible';
+		ts.style.overflow = 'visible';
+		ts.style.zIndex = 4;
+	}
+	// 2025-11-29 HSG: reassert visibility in next tick in case anything flips it
+	var self = this;
+	setTimeout( function () {
+		if (self.wrapper) self.wrapper.style.overflow = 'visible';
+		if (self.overlayBox) {
+			self.overlayBox.style.overflow = 'visible';
+			self.overlayBox.style.display = 'block';
+			self.overlayBox.style.visibility = 'visible';
+			self.showOverlays();
+		}
+		if (self.slideshow && self.slideshow.controls) {
+			self.slideshow.controls.style.display = 'block';
+			self.slideshow.controls.style.visibility = 'visible';
+		}
+		if (self.slideshow && self.slideshow.thumbstrip && self.slideshow.thumbstrip.overlay) {
+			var ts2 = self.slideshow.thumbstrip.overlay;
+			ts2.style.display = 'block';
+			ts2.style.visibility = 'visible';
+			ts2.style.overflow = 'visible';
+		}
+	}, 0 );
 	this._hsgZoomed = true;
 	return true;
 },
@@ -2990,7 +3159,7 @@ afterClose : function () {
 	hs.fireEvent(this, 'onAfterClose');
 	hs.expanders[this.key] = null;		
 	hs.reOrder();
-	// 2026-11-27 HSG: clear zoom state on close
+	// 2025-11-29 HSG: clear zoom state on close
 	this._hsgFitBox = null;
 	this._hsgZoomed = false;
 }
@@ -3098,7 +3267,7 @@ hs.Slideshow = function (expKey, options) {
 	if (this.thumbstrip) this.thumbstrip = hs.Thumbstrip(this);
 };
 hs.Slideshow.prototype = {
-	// 2026-11-27 HSG: toggle label text when zooming
+	// 2025-11-29 HSG: toggle label text when zooming
 	updateZoomLabel: function (zoomed) {
 		if (!this.btn || !this.btn['full-expand']) return;
 		var a = this.btn['full-expand'].getElementsByTagName('a')[0];
@@ -3185,11 +3354,11 @@ next: function() {
 },
 move: function() {},
 'full-expand': function() {
-	// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
+	// 2025-11-29 HSG: enable vendor zoom toggle (fit <-> 1:1) support
 	var exp = hs.getExpander();
 	if (!exp) return;
 	if (hs.fullExpandToggle && typeof exp.toggleFullExpand === 'function') {
-		// 2026-11-27 HSG: use toggle + label update
+		// 2025-11-29 HSG: use toggle + label update
 		var zoomed = exp.toggleFullExpand();
 		this.updateZoomLabel(zoomed);
 		return;
