@@ -772,7 +772,7 @@ mouseClickHandler : function(e)
 		if (!(hs.fullExpandToggle && exp && exp._hsgZoomed && exp.isImage)) {
 			hs.dragArgs.exp.doShowHide('hidden');
 		} else {
-			// 2025-11-29 HSG: Keep overlays visible mid-pan
+			// 2025-11-30 HSG: Keep overlays visible mid-pan
 			if (exp.wrapper) exp.wrapper.style.overflow = 'visible';
 			if (exp.overlayBox) {
 				exp.overlayBox.style.overflow = 'visible';
@@ -3029,6 +3029,17 @@ toggleFullExpand : function () {
 			this.content.style.top = '0px';
 			this.content.style.width = this._hsgFitBox.w + 'px';
 			this.content.style.height = this._hsgFitBox.h + 'px';
+			// 2025-11-30 HSG: unwrap zoom viewport when restoring fit box
+			if (this._hsgViewport && this._hsgContentHost) {
+					if (this._hsgViewport.contains(this.content)) {
+					this._hsgContentHost.insertBefore(this.content, this._hsgViewport);
+				}
+				if (this._hsgViewport.parentNode) {
+					this._hsgViewport.parentNode.removeChild(this._hsgViewport);
+				}
+				this._hsgViewport = null;
+				this._hsgContentHost = null;
+			}
 		}
 		if (this.overlayBox) this.showOverlays();
 		if (this.slideshow && this.slideshow.controls) {
@@ -3059,8 +3070,8 @@ toggleFullExpand : function () {
 	this.resizeTo(this._hsgFitBox.w, this._hsgFitBox.h);
 	this.moveTo(this._hsgFitBox.x, this._hsgFitBox.y);
 	if (this.wrapper) {
-		// 2025-11-29 HSG: keep wrapper locked to fit box; image pans inside
-		this.wrapper.style.overflow = 'hidden';
+		// 2025-11-30 HSG: keep wrapper sized to fit box; image clips in an inner viewport
+		this.wrapper.style.overflow = 'visible';
 		this.wrapper.style.width = this._hsgFitBox.w + 'px';
 		this.wrapper.style.height = this._hsgFitBox.h + 'px';
 	}
@@ -3070,13 +3081,25 @@ toggleFullExpand : function () {
 		this.overlayBox.style.visibility = 'visible';
 	}
 	if (this.isImage && this.content) {
-		var container = this.content.parentNode;
-		if (container) {
-			container.style.overflow = 'hidden';
-			if (!container.style.position) container.style.position = 'relative';
-			container.style.width = this._hsgFitBox.w + 'px';
-			container.style.height = this._hsgFitBox.h + 'px';
+		// 2025-11-30 HSG: insert a dedicated viewport to clip the zoomed image without clipping overlays
+		var host = this.content.parentNode;
+		if (!this._hsgContentHost) this._hsgContentHost = host;
+		var viewport = this._hsgViewport;
+		if (!viewport) {
+			viewport = hs.createElement('div', null, {
+				position: 'relative',
+				overflow: 'hidden',
+				margin: '0',
+				padding: '0'
+			}, null, true);
+			this._hsgViewport = viewport;
 		}
+		if (host && viewport.parentNode !== host) {
+			host.insertBefore(viewport, this.content);
+		}
+		viewport.style.width = this._hsgFitBox.w + 'px';
+		viewport.style.height = this._hsgFitBox.h + 'px';
+		viewport.appendChild(this.content);
 		this.content.style.position = 'absolute';
 		this.content.style.left = '0px';
 		this.content.style.top = '0px';
@@ -3112,10 +3135,11 @@ toggleFullExpand : function () {
 		ts.style.overflow = 'visible';
 		ts.style.zIndex = 4;
 	}
-	// 2025-11-29 HSG: reassert visibility in next tick in case anything flips it
-	var self = this;
-	setTimeout( function () {
-		if (self.wrapper) self.wrapper.style.overflow = 'visible';
+		// 2025-11-29 HSG: reassert visibility in next tick in case anything flips it
+		var self = this;
+		setTimeout( function () {
+			// 2025-11-30 HSG: keep wrapper open for overlays; clipping handled by inner viewport
+			if (self.wrapper) self.wrapper.style.overflow = 'visible';
 		if (self.overlayBox) {
 			self.overlayBox.style.overflow = 'visible';
 			self.overlayBox.style.display = 'block';
