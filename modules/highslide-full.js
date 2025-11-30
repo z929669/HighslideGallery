@@ -1353,16 +1353,17 @@ setSize: function(i) {
 		if (exp.body) exp.body.style[this.wh] = 'auto';
 	}
 	if (this.dim == 'x' && exp.overlayBox) exp.sizeOverlayBox(true);
-	if (this.dim == 'x' && exp.slideshow && exp.isImage) {
-		// 2025-11-28 HSG: enable vendor zoom toggle (fit <-> 1:1) support
-		if (!hs.fullExpandToggle) {
-			if (i == this.full) exp.slideshow.disable('full-expand');
-			else exp.slideshow.enable('full-expand');
-		} else {
-			// 2025-11-28 HSG: keep the control enabled for toggle mode
-			exp.slideshow.enable('full-expand');
+		if (this.dim == 'x' && exp.slideshow && exp.isImage) {
+			// 2025-11-30 HSG: keep zoom control in sync (fits/images may be disabled)
+			if (!hs.fullExpandToggle) {
+				if (i == this.full) exp.slideshow.disable('full-expand');
+				else exp.slideshow.enable('full-expand');
+			} else if (typeof exp._hsgUpdateZoomControl === 'function') {
+				exp._hsgUpdateZoomControl();
+			} else {
+				exp.slideshow.enable('full-expand');
+			}
 		}
-	}
 },
 setPos: function(i) {
 	this.pos = i;
@@ -2310,7 +2311,52 @@ reuseOverlay : function(o, el) {
 },
 
 
-afterExpand : function() {
+	// 2025-11-30 HSG: centralize zoom control enable/disable (videos and fit images get grayed out)
+	_hsgUpdateZoomControl : function () {
+		if (!this.slideshow || !this.slideshow.enable || !this.slideshow.disable) return;
+
+		// Non-images: always disable zoom.
+		if (!this.isImage) {
+			this.slideshow.disable('full-expand');
+			if (typeof this.slideshow.updateZoomLabel === 'function') {
+				this.slideshow.updateZoomLabel(false);
+			}
+			this._hsgZoomed = false;
+			return;
+		}
+
+		// Images: disable if the natural size already fits the current box.
+		var natW = (this.content && this.content.naturalWidth) || (this.x && this.x.full) || 0;
+		var natH = (this.content && this.content.naturalHeight) || (this.y && this.y.full) || 0;
+		var fitW = (this.wrapper && this.wrapper.offsetWidth) || (this.x && this.x.size) || natW;
+		var fitH = (this.wrapper && this.wrapper.offsetHeight) || (this.y && this.y.size) || natH;
+
+		// Allow 1px tolerance to avoid float/rounding issues.
+		var fitsViewport = natW <= fitW + 1 && natH <= fitH + 1;
+
+		if (fitsViewport) {
+			this.slideshow.disable('full-expand');
+			if (typeof this.slideshow.updateZoomLabel === 'function') {
+				this.slideshow.updateZoomLabel(false);
+			}
+			// 2025-11-30 HSG: belt-and-suspenders disable on the anchor
+			if (this.slideshow.btn && this.slideshow.btn['full-expand']) {
+				var a = this.slideshow.btn['full-expand'].getElementsByTagName('a')[0];
+				if (a && a.className.indexOf('disabled') === -1) {
+					a.className += ' disabled';
+				}
+			}
+			this._hsgZoomed = false;
+		} else {
+			this.slideshow.enable('full-expand');
+			if (typeof this.slideshow.updateZoomLabel === 'function') {
+				this.slideshow.updateZoomLabel(!!this._hsgZoomed);
+			}
+		}
+	},
+
+
+	afterExpand : function() {
 	this.isExpanded = true;	
 	this.focus();
 	
@@ -2333,10 +2379,15 @@ afterExpand : function() {
 	this.mouseIsOver = this.x.pos < mX && mX < this.x.pos + this.x.get('wsize')
 		&& this.y.pos < mY && mY < this.y.pos + this.y.get('wsize');	
 	if (this.overlayBox) this.showOverlays();
-	// 2025-11-29 HSG: ensure controls/thumbstrip stay visible when zoom toggle is active
-	if (hs.fullExpandToggle && this.slideshow && this.slideshow.controls) {
-		this.slideshow.enable('full-expand');
-	}
+	// 2025-11-30 HSG: sync zoom control state (videos and fit images disable 1:1)
+	this._hsgUpdateZoomControl();
+	// 2025-11-30 HSG: reassert after layout settles
+	var self = this;
+	setTimeout(function () {
+		if (self && typeof self._hsgUpdateZoomControl === 'function') {
+			self._hsgUpdateZoomControl();
+		}
+	}, 0);
 	hs.fireEvent(this, 'onAfterExpand');
 	
 },
@@ -2402,8 +2453,13 @@ initSlideshow : function() {
 	ss.checkFirstAndLast();
 
 	// 2025-11-28 HSG: enable vendor zoom toggle (fit <-> 1:1) support
-	if (!hs.fullExpandToggle) ss.disable('full-expand');
-	else ss.enable('full-expand');
+	if (!hs.fullExpandToggle) {
+		ss.disable('full-expand');
+	} else if (typeof this._hsgUpdateZoomControl === 'function') {
+		this._hsgUpdateZoomControl();
+	} else {
+		ss.enable('full-expand');
+	}
 
 	if (ss.controls) {
 		this.createOverlay(hs.extend(ss.overlayOptions || {}, {
