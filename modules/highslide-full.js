@@ -773,17 +773,7 @@ mouseClickHandler : function(e)
 			hs.dragArgs.exp.doShowHide('hidden');
 		} else {
 			// 2025-11-30 HSG: Keep overlays visible mid-pan
-			if (exp.wrapper) exp.wrapper.style.overflow = 'visible';
-			if (exp.overlayBox) {
-				exp.overlayBox.style.overflow = 'visible';
-				exp.overlayBox.style.display = 'block';
-				exp.overlayBox.style.visibility = 'visible';
-				exp.showOverlays();
-			}
-			if (exp.slideshow && exp.slideshow.controls) {
-				exp.slideshow.controls.style.display = 'block';
-				exp.slideshow.controls.style.visibility = 'visible';
-			}
+			if (typeof exp._hsgShowChrome === 'function') exp._hsgShowChrome();
 		}
 	}
 			
@@ -852,17 +842,7 @@ dragHandler : function(e)
 				img.style.cursor = 'move';
 				container.style.overflow = 'hidden';
 				if (!container.style.position) container.style.position = 'relative';
-				if (exp.wrapper) exp.wrapper.style.overflow = 'visible';
-				if (exp.overlayBox) {
-					exp.overlayBox.style.overflow = 'visible';
-					exp.overlayBox.style.display = 'block';
-					exp.overlayBox.style.visibility = 'visible';
-					exp.showOverlays();
-				}
-				if (exp.slideshow && exp.slideshow.controls) {
-					exp.slideshow.controls.style.display = 'block';
-					exp.slideshow.controls.style.visibility = 'visible';
-				}
+				if (typeof exp._hsgShowChrome === 'function') exp._hsgShowChrome();
 			}
 		} else {
 			exp.moveTo(a.left + a.dX, a.top + a.dY);
@@ -3006,8 +2986,40 @@ doFullExpand : function () {
 	}
 },
 
-// 2025-11-29 HSG: panning for zoomed images
-toggleFullExpand : function () {
+	// 2025-11-29 HSG: panning for zoomed images
+	toggleFullExpand : function () {
+		// 2025-11-30 HSG: ensure overlays/controls/thumbstrip stay visible when called
+		this._hsgShowChrome = this._hsgShowChrome || function () {
+			// 2025-11-30 HSG: keep wrapper open for overlays; clipping is handled by the inner viewport
+			if (this.wrapper) this.wrapper.style.overflow = 'visible';
+			if (this.overlayBox) {
+				this.overlayBox.style.overflow = 'visible';
+				this.overlayBox.style.display = 'block';
+				this.overlayBox.style.visibility = 'visible';
+				this.showOverlays();
+				// 2025-11-30 HSG: ensure overlay children stay visible when zoomed
+				var kids = this.overlayBox.childNodes || [];
+				for (var i = 0; i < kids.length; i++) {
+					if (kids[i] && kids[i].style) {
+						kids[i].style.display = 'block';
+						kids[i].style.visibility = 'visible';
+					}
+				}
+			}
+			if (this.slideshow && this.slideshow.controls) {
+				this.slideshow.controls.style.display = 'block';
+				this.slideshow.controls.style.visibility = 'visible';
+				this.slideshow.controls.style.overflow = 'visible';
+				this.slideshow.controls.style.zIndex = 5;
+			}
+			if (this.slideshow && this.slideshow.thumbstrip && this.slideshow.thumbstrip.overlay) {
+				var ts = this.slideshow.thumbstrip.overlay;
+				ts.style.display = 'block';
+				ts.style.visibility = 'visible';
+				ts.style.overflow = 'visible';
+				ts.style.zIndex = 4;
+			}
+		};
 	// If already zoomed, restore fit.
 	if (this._hsgZoomed && this._hsgFitBox) {
 		this.resizeTo(this._hsgFitBox.w, this._hsgFitBox.h);
@@ -3108,54 +3120,11 @@ toggleFullExpand : function () {
 	}
 	// 2025-11-29 HSG: Keep overlays visible when zoomed
 	this.doShowHide('visible');
-	if (this.overlayBox) {
-		this.overlayBox.style.display = 'block';
-		this.overlayBox.style.visibility = 'visible';
-		this.showOverlays();
-		// 2025-11-29 HSG: force overlay children visible after zoom-in
-		var kids = this.overlayBox.childNodes || [];
-		for (var i = 0; i < kids.length; i++) {
-			if (kids[i] && kids[i].style) {
-				kids[i].style.display = 'block';
-				kids[i].style.visibility = 'visible';
-			}
-		}
-	}
-	// 2025-11-29 HSG: force control + strip overlays visible when zoomed
-	if (this.slideshow && this.slideshow.controls) {
-		this.slideshow.controls.style.display = 'block';
-		this.slideshow.controls.style.visibility = 'visible';
-		this.slideshow.controls.style.overflow = 'visible';
-		this.slideshow.controls.style.zIndex = 5;
-	}
-	if (this.slideshow && this.slideshow.thumbstrip && this.slideshow.thumbstrip.overlay) {
-		var ts = this.slideshow.thumbstrip.overlay;
-		ts.style.display = 'block';
-		ts.style.visibility = 'visible';
-		ts.style.overflow = 'visible';
-		ts.style.zIndex = 4;
-	}
-		// 2025-11-29 HSG: reassert visibility in next tick in case anything flips it
-		var self = this;
-		setTimeout( function () {
-			// 2025-11-30 HSG: keep wrapper open for overlays; clipping handled by inner viewport
-			if (self.wrapper) self.wrapper.style.overflow = 'visible';
-		if (self.overlayBox) {
-			self.overlayBox.style.overflow = 'visible';
-			self.overlayBox.style.display = 'block';
-			self.overlayBox.style.visibility = 'visible';
-			self.showOverlays();
-		}
-		if (self.slideshow && self.slideshow.controls) {
-			self.slideshow.controls.style.display = 'block';
-			self.slideshow.controls.style.visibility = 'visible';
-		}
-		if (self.slideshow && self.slideshow.thumbstrip && self.slideshow.thumbstrip.overlay) {
-			var ts2 = self.slideshow.thumbstrip.overlay;
-			ts2.style.display = 'block';
-			ts2.style.visibility = 'visible';
-			ts2.style.overflow = 'visible';
-		}
+	if (typeof this._hsgShowChrome === 'function') this._hsgShowChrome();
+	// 2025-11-29 HSG: reassert visibility in next tick in case anything flips it
+	var self = this;
+	setTimeout( function () {
+		if (typeof self._hsgShowChrome === 'function') self._hsgShowChrome();
 	}, 0 );
 	this._hsgZoomed = true;
 	return true;
@@ -3299,7 +3268,7 @@ hs.Slideshow.prototype = {
 		if (span) span.textContent = zoomed ? 'Fit' : '1:1';
 	},
 getControls: function() {
-	// Create controls detached initially to avoid briefly rendering the
+	// 2025-11-21 HSG: Create controls detached initially to avoid briefly rendering the
 	// controlbar at the page origin (0,0) before overlays are positioned.
 	this.controls = hs.createElement('div', { innerHTML: hs.replaceLang(hs.skin.controls) }, 
 		null, null);
