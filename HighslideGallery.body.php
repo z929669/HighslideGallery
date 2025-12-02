@@ -271,14 +271,14 @@ class HighslideGallery {
 
 		if ( $inlineMode ) {
 			// INLINE TEXT LINK - always invoke Highslide via inline onclick.
-			$s  = '<a class="highslide link-youtube"';
+			$s  = '<a class="highslide link-youtube hsg-thumb"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
 			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.hsgVideoOptions || {});"';
 			$s .= $dataCaption . $dataGroup . '>';
 			$s .= $linkTextEsc . '</a>';
 		} else {
-			// THUMBNAIL LINK
+			// THUMBNAIL LINK (MW-like thumb structure)
 			$thumbUrl = 'https://img.youtube.com/vi/' . rawurlencode( $code ) . '/hqdefault.jpg';
 			$style    = '';
 
@@ -286,15 +286,24 @@ class HighslideGallery {
 				$style = ' style="max-width: ' . $width . 'px; height: auto; width: auto;"';
 			}
 
-			$s  = '<a class="highslide link-youtube hsg-ytb-thumb"';
-			$s .= ' title="' . $titleEsc . '"';
-			$s .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
-			$s .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.hsgVideoOptions || {});"';
-			$s .= $dataCaption . $dataGroup . '>';
-			$s .= '<img class="hsimg hsg-ytb-thumb-img" src="' .
+			$innerStyle = $width > 0 ? ' style="width: ' . ( $width + 2 ) . 'px;"' : '';
+
+			$anchor  = '<a class="highslide link-youtube hsg-ytb-thumb hsg-thumb"';
+			$anchor .= ' title="' . $titleEsc . '"';
+			$anchor .= ' href="' . htmlspecialchars( $href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '"';
+			$anchor .= ' onclick="return (window.hsgOpenYouTube || hs.htmlExpand)(this, window.hsgVideoOptions || {});"';
+			$anchor .= $dataCaption . $dataGroup . '>';
+			$anchor .= '<img class="hsimg hsg-ytb-thumb-img" src="' .
 				htmlspecialchars( $thumbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
 				'" alt="' . $titleEsc . '"' . $style . ' />';
-			$s .= '</a>';
+			$anchor .= '</a>';
+
+			$captionHtml = $captionEsc !== '' ? '<div class="thumbcaption hsg-caption">' . $captionEsc . '</div>' : '';
+
+			$s  = '<div class="thumb hsg-thumb hsg-thumb-normalized">';
+			$s .= '<div class="thumbinner hsg-thumb"' . $innerStyle . '>';
+			$s .= $anchor . $captionHtml;
+			$s .= '</div></div>';
 		}
 
 		// We no longer output a <div class="highslide-caption"> here;
@@ -509,8 +518,22 @@ class HighslideGallery {
 			self::$hsgLabel = null;
 		}
 
+		// Build anchor and apply Highslide hooks.
 		$s = $hs . $hsimg . ' /></a>';
 		self::AddHighslide( $s, null, $caption, null );
+
+		// Wrap in a MediaWiki-like thumb shell for consistent markup with internal images.
+		$thumbStyle = '';
+		if ( $w > 0 ) {
+			$thumbStyle = ' style="width: ' . ( $w + 2 ) . 'px;"';
+		}
+		$captionHtml = '';
+		if ( $caption !== '' ) {
+			$captionHtml = '<div class="thumbcaption hsg-caption">' . $captionEsc . '</div>';
+		}
+		$s = '<div class="thumb hsg-thumb hsg-thumb-normalized"><div class="thumbinner hsg-thumb"' . $thumbStyle . '>' .
+			$s . $captionHtml . '</div></div>';
+
 		return [ $s, 'isHTML' => true ];
 	}
 

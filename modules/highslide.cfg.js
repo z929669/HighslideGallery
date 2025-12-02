@@ -391,10 +391,8 @@ function hsgFixThumbFloat( root ) {
 	} );
 }
 
-	// Normalize list-based galleries: when an empty gallery block sits inside a list
-	// item and real gallery blocks follow, move those gallery blocks into the list
-	// item so bullets align and items render side by side.
-	function hsgFixListGalleries( root ) {
+	// Normalize list-based galleries and wrap thumbs within each list item so they stay together.
+	function hsgNormalizeListGalleries( root ) {
 		var scope = root || document;
 		// 2025-11-30 HSG: include all list types (ul/ol/dl) and mixed list nesting, including misplaced direct list children
 		var placeholders = scope.querySelectorAll( 'li .gallery.text-break, dd .gallery.text-break, ul > .gallery.text-break, ol > .gallery.text-break, dl > .gallery.text-break' );
@@ -550,18 +548,166 @@ function hsgFixThumbFloat( root ) {
 				wrap.appendChild( node );
 			} );
 
+			// Also pull any additional gallery/thumb siblings inside this list item.
+			var sib = wrap.nextElementSibling;
+			while ( sib ) {
+				var isGallery = sib.classList && sib.classList.contains( 'gallery' ) && sib.classList.contains( 'text-break' );
+				var isThumb = sib.classList && sib.classList.contains( 'thumb' );
+				if ( isGallery || isThumb ) {
+					var next = sib.nextElementSibling;
+					wrap.appendChild( sib );
+					sib = next;
+					continue;
+				}
+				break;
+			}
+
 			item.appendChild( wrap );
+		} );
+
+		// 2025-12-01 HSG: if list items have direct gallery/thumb children, wrap them together.
+		var listItems = scope.querySelectorAll( 'ul > li, ol > li, dl > dd' );
+		listItems.forEach( function ( li ) {
+			if ( li.querySelector( ':scope > .hsg-list-gallery-wrap' ) ) {
+				return;
+			}
+			var directBlocks = li.querySelectorAll( ':scope > .gallery.text-break, :scope > .thumb' );
+			if ( directBlocks.length === 0 ) {
+				return;
+			}
+			var wrap = document.createElement( 'div' );
+			wrap.className = 'hsg-list-gallery-wrap';
+			var first = directBlocks[0];
+			li.insertBefore( wrap, first );
+			directBlocks.forEach( function ( node ) {
+				wrap.appendChild( node );
+			} );
 		} );
 	}
 
-if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
-	mw.hook( 'wikipage.content' ).add( function ( $content ) {
-		hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
-		hsgFixListGalleries( $content && $content[0] ? $content[0] : document );
-	} );
-} else {
-	document.addEventListener( 'DOMContentLoaded', function () {
-		hsgFixThumbFloat( document );
-		hsgFixListGalleries( document );
-	} );
-}
+	// 2025-12-01 HSG: Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs.
+	function hsgNormalizeThumbBlocks( root ) {
+		var scope = root || document;
+
+		var isSeparator = function ( node ) {
+			if ( !node ) return false;
+			if ( node.nodeType === 3 ) {
+				return !!( node.textContent && node.textContent.trim() );
+			}
+			if ( node.nodeType !== 1 ) return false;
+			var tag = node.tagName;
+			if ( tag === 'BR' || tag === 'HR' ) return true;
+			if ( /^H[1-6]$/.test( tag ) ) return true;
+			if ( tag === 'P' ) return true;
+			if ( tag === 'DIV' && node.style && node.style.clear ) return true;
+			if ( node.classList && node.classList.contains( 'clear' ) ) return true;
+			return false;
+		};
+
+		// Unwrap <p> around gallery text thumbs if present.
+		var galleries = scope.querySelectorAll( '.gallery.text-break' );
+		galleries.forEach( function ( gallery ) {
+			if ( gallery.className.indexOf( 'hsg-gallery-block' ) === -1 ) {
+				gallery.className += (gallery.className ? ' ' : '') + 'hsg-gallery-block';
+			}
+			var pChild = gallery.querySelector( ':scope > p' );
+			var anchor = pChild ? pChild.querySelector( 'a' ) : null;
+			if ( pChild && anchor && !gallery.querySelector( ':scope > .thumb' ) ) {
+				var img = anchor.querySelector( 'img' );
+				var inner = document.createElement( 'div' );
+				inner.className = 'thumbinner hsg-thumb';
+				if ( img && img.width ) {
+					inner.style.width = ( img.width + 2 ) + 'px';
+				}
+				inner.appendChild( anchor );
+				var thumb = document.createElement( 'div' );
+				thumb.className = 'thumb hsg-thumb hsg-thumb-normalized';
+				thumb.appendChild( inner );
+				gallery.insertBefore( thumb, pChild );
+				pChild.remove();
+			}
+		} );
+
+		// Apply HSG hooks to thumbs, inners, anchors, captions.
+		scope.querySelectorAll( '.thumb' ).forEach( function ( t ) {
+			if ( t.className.indexOf( 'hsg-thumb' ) === -1 ) {
+				t.className += (t.className ? ' ' : '') + 'hsg-thumb';
+			}
+		} );
+		scope.querySelectorAll( '.thumbinner' ).forEach( function ( ti ) {
+			if ( ti.className.indexOf( 'hsg-thumb' ) === -1 ) {
+				ti.className += (ti.className ? ' ' : '') + 'hsg-thumb';
+			}
+		} );
+		scope.querySelectorAll( '.thumb a, .gallery.text-break a' ).forEach( function ( a ) {
+			if ( a.className.indexOf( 'hsg-thumb' ) === -1 ) {
+				a.className += (a.className ? ' ' : '') + 'hsg-thumb';
+			}
+		} );
+		scope.querySelectorAll( '.thumbcaption, .gallerytext' ).forEach( function ( cap ) {
+			if ( cap.className.indexOf( 'hsg-caption' ) === -1 ) {
+				cap.className += (cap.className ? ' ' : '') + 'hsg-caption';
+			}
+			cap.querySelectorAll( 'a' ).forEach( function ( link ) {
+				if ( link.className.indexOf( 'hsg-thumb' ) === -1 ) {
+					link.className += (link.className ? ' ' : '') + 'hsg-thumb';
+				}
+			} );
+		} );
+
+		// Wrap loose sibling thumbs (non-list) together until a separator.
+		var parents = new Set();
+		scope.querySelectorAll( '.thumb' ).forEach( function ( t ) {
+			if ( t.parentElement ) parents.add( t.parentElement );
+		} );
+		parents.forEach( function ( parent ) {
+			if ( parent.tagName === 'LI' || parent.tagName === 'DD' ) return;
+			var nodes = Array.prototype.slice.call( parent.childNodes || [] );
+			var run = [];
+			nodes.forEach( function ( node ) {
+				if ( isSeparator( node ) ) {
+					if ( run.length > 1 ) {
+						var wrap = document.createElement( 'div' );
+						wrap.className = 'hsg-gallery-wrap';
+						parent.insertBefore( wrap, run[0] );
+						run.forEach( function ( n ) { wrap.appendChild( n ); } );
+					}
+					run = [];
+					return;
+				}
+				if ( node.nodeType === 1 && node.classList && node.classList.contains( 'thumb' ) ) {
+					run.push( node );
+				} else if ( node.nodeType === 3 && !node.textContent.trim() ) {
+					// ignore whitespace
+				} else {
+					if ( run.length > 1 ) {
+						var wrap2 = document.createElement( 'div' );
+						wrap2.className = 'hsg-gallery-wrap';
+						parent.insertBefore( wrap2, run[0] );
+						run.forEach( function ( n ) { wrap2.appendChild( n ); } );
+					}
+					run = [];
+				}
+			} );
+			if ( run.length > 1 ) {
+				var wrapFinal = document.createElement( 'div' );
+				wrapFinal.className = 'hsg-gallery-wrap';
+				parent.insertBefore( wrapFinal, run[0] );
+				run.forEach( function ( n ) { wrapFinal.appendChild( n ); } );
+			}
+		} );
+	}
+
+	if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
+		mw.hook( 'wikipage.content' ).add( function ( $content ) {
+			hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
+			hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
+			hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
+		} );
+	} else {
+		document.addEventListener( 'DOMContentLoaded', function () {
+			hsgFixThumbFloat( document );
+			hsgNormalizeListGalleries( document );
+			hsgNormalizeThumbBlocks( document );
+		} );
+	}
