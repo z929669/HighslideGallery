@@ -21,6 +21,5 @@ $magicWords = [];
 $magicWords['en'] = [
 	// Parser function name (used as {{#hsg*:...}})
 	'hsgimg'  => [ 0, 'hsimg', 'hsgimg' ],
-	'hsgytb'  => [ 0, 'hsgytb' ],
-	'hsglink' => [ 0, 'hsglink' ]
+	'hsgytb'  => [ 0, 'hsgytb' ]
 ];

@@ -7,6 +7,5 @@
 	},
 	"hsg-desc": "Extension description shown on Special:Version.",
 	"hsgimg-desc": "Description for the external image helper parser function.",
-	"hsgytb-desc": "Description for the YouTube helper parser function.",
-	"hsglink-desc": "Description for the inline text link helper parser function."
+	"hsgytb-desc": "Description for the YouTube helper parser function."
 }
