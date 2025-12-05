@@ -81,24 +81,24 @@ class HighslideGallery {
 	 * Tag <hsyoutube>…</hsyoutube> (legacy).
 	 */
 	public static function onTagHsYouTube(
-		$content,
+		$source,
 		array $attributes,
 		Parser $parser,
 		?PPFrame $frame = null
 	) {
-		return self::renderYouTubeHtml( $content, $attributes, $parser, $frame, false );
+		return self::renderYouTubeHtml( $source, $attributes, $parser, $frame, false );
 	}
 
 	/**
 	 * Tag <hsgytb>…</hsgytb> (canonical).
 	 */
 	public static function onTagHsgYtb(
-		$content,
+		$source,
 		array $attributes,
 		Parser $parser,
 		?PPFrame $frame = null
 	) {
-		return self::renderYouTubeHtml( $content, $attributes, $parser, $frame, false );
+		return self::renderYouTubeHtml( $source, $attributes, $parser, $frame, false );
 	}
 
 	/**
@@ -128,7 +128,7 @@ class HighslideGallery {
 	 *   - Remaining bare tokens → attributes[token] = true (flags).
 	 *
 	 * @param string[] $params
-	 * @param string   $primaryKey  e.g. 'src' (images) or 'content' (YouTube)
+	 * @param string   $primaryKey  e.g. 'source'
 	 * @return array{0:string,1:array} [ $primary, $attributes ]
 	 */
 	private static function parseParserFunctionArgs( array $params, string $primaryKey ): array {
@@ -181,12 +181,12 @@ class HighslideGallery {
 	 *   {{#hsglink: File:Example.jpg | hsgid=MyGallery | caption=Nice image | linktext=Click here }}
 	 *
 	 * Usage (named):
-	 *   {{#hsglink: src=File:Example.jpg | hsgid=MyGallery | caption=Nice image | linktext=Click here }}
+	 *   {{#hsglink: source=File:Example.jpg | hsgid=MyGallery | caption=Nice image | linktext=Click here }}
 	 */
 	public static function onFunctionHsgLink( Parser $parser, ...$params ) {
-		[ $content, $attributes ] = self::parseParserFunctionArgs( $params, 'src' );
+		[ $source, $attributes ] = self::parseParserFunctionArgs( $params, 'source' );
 
-		if ( $content === '' ) {
+		if ( $source === '' ) {
 			return '';
 		}
 
@@ -209,10 +209,10 @@ class HighslideGallery {
 
 		$titleObj = null;
 		$fileObj  = null;
-		$href     = $content;
+		$href     = $source;
 		$thumbId  = uniqid( 'hsg-thumb-', true );
 
-		$titleObj = Title::newFromText( $content );
+		$titleObj = Title::newFromText( $source );
 		if ( $titleObj instanceof Title && $titleObj->inNamespace( NS_FILE ) ) {
 			$fileObj = \MediaWiki\MediaWikiServices::getInstance()
 				->getRepoGroup()
@@ -238,7 +238,7 @@ class HighslideGallery {
 		$opts = [
 			'slideshowGroup' => (string)$groupId,
 			'captionText'    => $captionHtml,
-			'thumbnailId'    => $thumbId,
+			'thumbnailId'    => $thumbId
 		];
 
 		$optsJson = htmlspecialchars(
@@ -262,10 +262,10 @@ class HighslideGallery {
 		$s .= '</a>';
 
 		return [
-			$s,
-			'noparse' => true,
-			'isHTML'  => true,
-		];
+            $s,
+            'noparse' => true,
+            'isHTML'  => true
+        ];
 	}
 
 	/**
@@ -276,30 +276,30 @@ class HighslideGallery {
 	 *   {{#hsgimg: https://example.com/foo.png | hsgid=MyGallery | width=208 | caption=Nice image }}
 	 *
 	 * Usage (named):
-	 *   {{#hsgimg: src=https://example.com/foo.png | hsgid=MyGallery | width=208 | caption=Nice image }}
+	 *   {{#hsgimg: source=https://example.com/foo.png | hsgid=MyGallery | width=208 | caption=Nice image }}
 	 *
 	 * Recognized attributes:
-	 *   - src     : URL or File: title (primary if not given positionally)
+	 *   - source  : URL or File: title (primary if not given positionally)
 	 *   - hsgid   : slideshow group id (id also accepted as synonym)
-	 *   - width   : max width in px (default 208)
+	 *   - width   : max width in px (default 0 → no explicit max-width)
 	 *   - caption : caption/title text (title accepted as fallback)
 	 */
 	public static function onFunctionHsgImg( Parser $parser, ...$params ) {
-		[ $content, $attributes ] = self::parseParserFunctionArgs( $params, 'src' );
+		[ $source, $attributes ] = self::parseParserFunctionArgs( $params, 'source' );
 
-		if ( $content === '' ) {
+		if ( $source === '' ) {
 			return '';
 		}
 
 		$hsgIdParam = $attributes['hsgid'] ?? $attributes['id'] ?? '';
 		$width      = isset( $attributes['width'] ) && $attributes['width'] !== ''
 			? (int)$attributes['width']
-			: 208;
-		$title      = $attributes['caption'] ?? $attributes['title'] ?? '';
+			: 0; // IMPORTANT: no hidden 208 default here
 
-		$caption = $title ?: $content;
+		$title = $attributes['caption'] ?? $attributes['title'] ?? '';
+		$caption = $title ?: $source;
 
-		$hrefEsc    = htmlspecialchars( $content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$hrefEsc    = htmlspecialchars( $source, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 		$captionEsc = htmlspecialchars( $caption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 
 		$hs    = '<a href="' . $hrefEsc . '" class="image highslide-link" title="' . $captionEsc . '">';
@@ -342,20 +342,20 @@ class HighslideGallery {
 	 *
 	 *   {{#hsgytb: https://www.youtube.com/watch?v=CODE | title=... | caption=... | autoplay }}
 	 *   {{#hsgytb: CODE | title=... | caption=... | autoplay }}
-	 *   {{#hsgytb: content=CODE | title=... | caption=... | width=300 | autoplay }}
+	 *   {{#hsgytb: source=CODE | title=... | caption=... | width=300 | autoplay }}
 	 *
 	 * Rules:
-	 *   - primary = first non-empty param without '=' OR content=...
+	 *   - primary = first non-empty param without '=' OR source=...
 	 *   - Remaining params as key=value attributes; bare tokens are flags.
 	 */
 	public static function onFunctionHsgYtb( Parser $parser, ...$params ) {
-		[ $content, $attributes ] = self::parseParserFunctionArgs( $params, 'content' );
+		[ $source, $attributes ] = self::parseParserFunctionArgs( $params, 'source' );
 
-		if ( $content === '' ) {
+		if ( $source === '' ) {
 			return '';
 		}
 
-		$html = self::renderYouTubeHtml( $content, $attributes, $parser, null, true );
+		$html = self::renderYouTubeHtml( $source, $attributes, $parser, null, true );
 
 		return [
 			$html,
@@ -373,13 +373,13 @@ class HighslideGallery {
 	 *   - onFunctionHsgYtb() → {{#hsgytb: …}}
 	 */
 	private static function renderYouTubeHtml(
-		$content,
+		$source,
 		array $attributes,
 		Parser $parser,
 		?PPFrame $frame = null,
 		bool $fromParserFunc = false
 	) {
-		$raw  = trim( (string)$content );
+		$raw  = trim( (string)$source );
 		$code = '';
 
 		// 1) Try normal URL shapes first.
