@@ -360,8 +360,7 @@ class HighslideGallery {
 		return [
 			$html,
 			'noparse' => true,
-			'isHTML'  => true,
-			'markerType' => 'nowiki'
+			'isHTML'  => true
 		];
 	}
 
@@ -521,15 +520,7 @@ class HighslideGallery {
 			}
 			$s .= '>';
 			$s .= $linkTextEsc . '</a>';
-			// For parser function calls, mark inline output as nowiki to avoid MW inserting breaks.
-			if ( $fromParserFunc ) {
-				return [
-					$s,
-					'noparse'    => true,
-					'isHTML'     => true,
-					'markerType' => 'nowiki'
-				];
-			}
+
 			return $s;
 		} else {
 			// THUMBNAIL LINK (MW-like thumb structure)
@@ -566,8 +557,6 @@ class HighslideGallery {
 			$s .= '</div></div>';
 		}
 
-		// We no longer output a <div class="highslide-caption"> here;
-		// the caption will be injected via hs.captionText in JS.
 		return $s;
 	}
 
