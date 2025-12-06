@@ -391,199 +391,42 @@ function hsgFixThumbFloat( root ) {
 	} );
 }
 
-	// Normalize list-based galleries and wrap thumbs within each list item so they stay together.
-	function hsgNormalizeListGalleries( root ) {
-		var scope = root || document;
-		// 2025-11-30 HSG: include all list types (ul/ol/dl) and mixed list nesting, including misplaced direct list children
-		var placeholders = scope.querySelectorAll( 'li .gallery.text-break, dd .gallery.text-break, ul > .gallery.text-break, ol > .gallery.text-break, dl > .gallery.text-break' );
+// Normalize list-based galleries and wrap thumbs within each list item so they stay together.
+function hsgNormalizeListGalleries( root ) {
+	var scope = root || document;
+	var listItems = scope.querySelectorAll( 'ul > li, ol > li, dl > dd' );
 
-		var isList = function ( node ) {
-			return !!node && (node.tagName === 'UL' || node.tagName === 'OL' || node.tagName === 'DL');
-		};
+	listItems.forEach( function ( li ) {
+		if ( li.querySelector( ':scope > .hsg-list-gallery-wrap' ) ) {
+			return;
+		}
 
-		var isListItem = function ( node ) {
-			return !!node && (node.tagName === 'LI' || node.tagName === 'DD');
-		};
+		var directBlocks = Array.prototype.slice.call(
+			li.querySelectorAll( ':scope > .gallery.text-break, :scope > .thumb' )
+		);
 
-		var isGalleryBlock = function ( node ) {
-			return !!node && node.classList && node.classList.contains( 'gallery' ) && node.classList.contains( 'text-break' );
-		};
-
-		var isThumbBlock = function ( node ) {
-			return !!node && node.classList && node.classList.contains( 'thumb' );
-		};
-
-		// 2025-11-30 HSG: climb ancestor lists to also collect siblings after outer UL/OL/DL
-		var getAncestorLists = function ( listNode ) {
-			var lists = [];
-			var cur = listNode;
-			while ( isList( cur ) ) {
-				lists.push( cur );
-				var liParent = cur.parentElement;
-				if ( !isListItem( liParent ) ) {
-					break;
-				}
-				cur = liParent.parentElement;
-			}
-			return lists;
-		};
-
-		var isEffectivelyEmpty = function ( node ) {
-			if ( !node ) return true;
-			for ( var i = 0; i < node.childNodes.length; i++ ) {
-				var c = node.childNodes[ i ];
-				if ( c.nodeType === 1 ) return false;
-				if ( c.nodeType === 3 && c.textContent && c.textContent.trim() ) return false;
+		// Drop empty gallery placeholders to avoid wrapping dead nodes.
+		directBlocks = directBlocks.filter( function ( node ) {
+			var isGallery = node.classList && node.classList.contains( 'gallery' ) && node.classList.contains( 'text-break' );
+			if ( isGallery && !node.querySelector( '.thumb' ) ) {
+				node.remove();
+				return false;
 			}
 			return true;
-		};
-
-		// Generic collector: walk sibling chain starting at `start`, adding any gallery/thumb.
-		var collectBlocks = function ( start ) {
-			var collected = [];
-			var removeEmptyItems = [];
-			var next = start;
-			while ( next ) {
-				if ( isGalleryBlock( next ) || isThumbBlock( next ) ) {
-					collected.push( { node: next, removeParent: false } );
-					next = next.nextElementSibling;
-					continue;
-				}
-				if ( isListItem( next ) ) {
-					var inner = next.querySelectorAll( ':scope > .gallery.text-break, :scope > .thumb' );
-					if ( inner.length ) {
-						inner.forEach( function ( node ) {
-							collected.push( { node: node, removeParent: false } );
-						} );
-						// If the list item only contains these nodes (and whitespace), mark for removal after moves.
-						removeEmptyItems.push( next );
-						next = next.nextElementSibling;
-						continue;
-					}
-				}
-				break; // stop on first non-gallery/non-thumb case
-			}
-			return { collected: collected, removeEmptyItems: removeEmptyItems };
-		};
-
-		placeholders.forEach( function ( placeholder ) {
-			// Only care about empty placeholders (no thumb inside).
-			if ( placeholder.querySelector( '.thumb' ) ) {
-				return;
-			}
-
-			var item = placeholder.parentElement;
-			if ( !isListItem( item ) ) {
-				// 2025-11-30 HSG: if placeholder is a direct child of a list, bind to the next list item
-				if ( isList( item ) ) {
-					var probe = placeholder.nextElementSibling;
-					while ( probe && !isListItem( probe ) ) {
-						probe = probe.nextElementSibling;
-					}
-					item = probe;
-				} else {
-					item = null;
-				}
-			}
-
-			if ( !isListItem( item ) ) {
-				return;
-			}
-
-			var list = item.parentElement;
-			if ( !isList( list ) ) {
-				return;
-			}
-
-			// 2025-11-30 HSG: collect from multiple paths to cover mixed lists and misplaced placeholders.
-			var collected = [];
-			var seen = new WeakSet();
-			var toPrune = [];
-			var addAll = function ( result ) {
-				if ( !result || !result.collected ) return;
-				result.collected.forEach( function ( entry ) {
-					var n = entry.node;
-					if ( n && !seen.has( n ) ) {
-						seen.add( n );
-						collected.push( n );
-					}
-				} );
-				if ( result.removeEmptyItems && result.removeEmptyItems.length ) {
-					result.removeEmptyItems.forEach( function ( itm ) { toPrune.push( itm ); } );
-				}
-			};
-
-			// 1) siblings after the placeholder itself
-			addAll( collectBlocks( placeholder.nextElementSibling ) );
-			// 2) siblings after the list item containing the placeholder
-			addAll( collectBlocks( item.nextElementSibling ) );
-			// 3) siblings immediately after the list container
-			addAll( collectBlocks( list.nextElementSibling ) );
-			// 4) siblings immediately after ancestor lists (covers galleries placed after outer OL/UL/DL)
-			var ancestorLists = getAncestorLists( list );
-			ancestorLists.forEach( function ( lst ) {
-				addAll( collectBlocks( lst.nextElementSibling ) );
-			} );
-
-			if ( collected.length === 0 ) {
-				// Still remove empty placeholder to avoid stray styling.
-				placeholder.remove();
-				return;
-			}
-
-			// Remove the empty placeholder gallery.
-			placeholder.remove();
-			// Remove any now-empty list items we marked (e.g., when galleries were the only children).
-			toPrune.forEach( function ( itm ) {
-				if ( itm && isEffectivelyEmpty( itm ) && itm.parentNode ) {
-					itm.parentNode.removeChild( itm );
-				}
-			} );
-
-			// Wrapper to keep list marker intact while laying out children horizontally.
-			var wrap = document.createElement( 'div' );
-			wrap.className = 'hsg-list-gallery-wrap';
-
-			collected.forEach( function ( node ) {
-				wrap.appendChild( node );
-			} );
-
-			// Also pull any additional gallery/thumb siblings inside this list item.
-			var sib = wrap.nextElementSibling;
-			while ( sib ) {
-				var isGallery = sib.classList && sib.classList.contains( 'gallery' ) && sib.classList.contains( 'text-break' );
-				var isThumb = sib.classList && sib.classList.contains( 'thumb' );
-				if ( isGallery || isThumb ) {
-					var next = sib.nextElementSibling;
-					wrap.appendChild( sib );
-					sib = next;
-					continue;
-				}
-				break;
-			}
-
-			item.appendChild( wrap );
 		} );
 
-		// 2025-12-01 HSG: if list items have direct gallery/thumb children, wrap them together.
-		var listItems = scope.querySelectorAll( 'ul > li, ol > li, dl > dd' );
-		listItems.forEach( function ( li ) {
-			if ( li.querySelector( ':scope > .hsg-list-gallery-wrap' ) ) {
-				return;
-			}
-			var directBlocks = li.querySelectorAll( ':scope > .gallery.text-break, :scope > .thumb' );
-			if ( directBlocks.length === 0 ) {
-				return;
-			}
-			var wrap = document.createElement( 'div' );
-			wrap.className = 'hsg-list-gallery-wrap';
-			var first = directBlocks[0];
-			li.insertBefore( wrap, first );
-			directBlocks.forEach( function ( node ) {
-				wrap.appendChild( node );
-			} );
+		if ( directBlocks.length === 0 ) {
+			return;
+		}
+
+		var wrap = document.createElement( 'div' );
+		wrap.className = 'hsg-list-gallery-wrap';
+		li.insertBefore( wrap, directBlocks[0] );
+		directBlocks.forEach( function ( node ) {
+			wrap.appendChild( node );
 		} );
-	}
+	} );
+}
 
 	// 2025-12-01 HSG: Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs.
 	function hsgNormalizeThumbBlocks( root ) {
@@ -698,16 +541,151 @@ function hsgFixThumbFloat( root ) {
 		} );
 	}
 
+	// 2025-12-04 HSG: If a thumb run got wrapped outside a list (e.g. from block HTML in list items),
+	// move the wrapper back into the nearest list item so bullets stay with their gallery.
+	function hsgRelocateWrapsIntoLists( root ) {
+		var scope = root || document;
+
+		var isList = function ( node ) {
+			return !!node && (node.tagName === 'UL' || node.tagName === 'OL' || node.tagName === 'DL');
+		};
+
+		var isListItem = function ( node ) {
+			return !!node && (node.tagName === 'LI' || node.tagName === 'DD');
+		};
+
+		var isWhitespace = function ( node ) {
+			if ( !node ) return false;
+			if ( node.nodeType === 3 ) {
+				return !node.textContent || node.textContent.trim() === '';
+			}
+			if ( node.nodeType !== 1 ) {
+				return false;
+			}
+			if ( node.tagName === 'BR' ) {
+				return true;
+			}
+			if ( node.tagName === 'P' ) {
+				return !node.textContent || node.textContent.trim() === '';
+			}
+			return false;
+		};
+
+		var deepestItemFromNode = function ( node ) {
+			if ( !node ) return null;
+
+			if ( isListItem( node ) ) {
+				var nestedList = node.querySelector( ':scope > ul:last-of-type, :scope > ol:last-of-type, :scope > dl:last-of-type' );
+				if ( nestedList ) {
+					var deeper = deepestItemFromNode( nestedList );
+					return deeper || node;
+				}
+				return node;
+			}
+
+			if ( isList( node ) ) {
+				var tail = node.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+				if ( !tail ) {
+					return null;
+				}
+				return deepestItemFromNode( tail ) || tail;
+			}
+
+			return null;
+		};
+
+		var findListContext = function ( wrap ) {
+			var cur = wrap.previousSibling;
+			while ( cur ) {
+				if ( isWhitespace( cur ) ) {
+					cur = cur.previousSibling;
+					continue;
+				}
+				if ( cur.nodeType === 1 ) {
+					if ( cur.classList && cur.classList.contains( 'hsg-gallery-wrap' ) ) {
+						cur = cur.previousSibling;
+						continue;
+					}
+					if ( isListItem( cur ) || isList( cur ) ) {
+						return cur;
+					}
+				}
+				break;
+			}
+			return null;
+		};
+
+		var findTargetItem = function ( wrap ) {
+			// 1) Nearest prior sibling that is a list or list item.
+			var ctx = findListContext( wrap );
+			var target = deepestItemFromNode( ctx );
+			if ( target ) {
+				return target;
+			}
+
+			// 2) Walk up ancestors; at each level, inspect prior siblings for lists/items.
+			var ancestor = wrap.parentElement;
+			while ( ancestor ) {
+				var prev = ancestor.previousSibling;
+				while ( prev ) {
+					if ( isWhitespace( prev ) ) {
+						prev = prev.previousSibling;
+						continue;
+					}
+					if ( prev.nodeType === 1 ) {
+						if ( prev.classList && prev.classList.contains( 'hsg-gallery-wrap' ) ) {
+							prev = prev.previousSibling;
+							continue;
+						}
+						var candidate = deepestItemFromNode( prev );
+						if ( candidate ) {
+							return candidate;
+						}
+					}
+					break;
+				}
+				if ( isListItem( ancestor ) ) {
+					// Already inside a list item; nothing to relocate.
+					return null;
+				}
+				ancestor = ancestor.parentElement;
+			}
+
+			return null;
+		};
+
+		scope.querySelectorAll( '.hsg-gallery-wrap' ).forEach( function ( wrap ) {
+			if ( !wrap.parentElement ) return;
+			// Already inside a list item/description item.
+			if ( wrap.parentElement.tagName === 'LI' || wrap.parentElement.tagName === 'DD' ) {
+				return;
+			}
+
+			var target = findTargetItem( wrap );
+			if ( !target ) {
+				return;
+			}
+
+			if ( wrap.className.indexOf( 'hsg-list-gallery-wrap' ) === -1 ) {
+				wrap.className += (wrap.className ? ' ' : '') + 'hsg-list-gallery-wrap';
+			}
+
+			target.appendChild( wrap );
+		} );
+	}
+
 	if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 		mw.hook( 'wikipage.content' ).add( function ( $content ) {
 			hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
 			hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
 			hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
+			hsgRelocateWrapsIntoLists( $content && $content[0] ? $content[0] : document );
 		} );
 	} else {
 		document.addEventListener( 'DOMContentLoaded', function () {
 			hsgFixThumbFloat( document );
 			hsgNormalizeListGalleries( document );
 			hsgNormalizeThumbBlocks( document );
+			hsgRelocateWrapsIntoLists( document );
 		} );
 	}
