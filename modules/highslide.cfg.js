@@ -1,6 +1,6 @@
 /*
  * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
- * @Copyright (C) 2012  Brian McCloskey, David Van Winkle, Step Modifications, Inc.
+ * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
  * GNU General Public License as published by the Free Software Foundation; either version 2 of the
@@ -19,13 +19,13 @@
  * Assumes highslide-full.js has already run and created global `hs`.
  *
  * Vendor:
- *   - `hs` and its properties
- *   - `.highslide-*`, `.you-tube`, `.link-youtube`
- *   - `hsgVideoOptions` as the base options object
+ * - `hs` and its properties
+ * - `.highslide-*`, `.you-tube`, `.link-youtube`
+ * - `hsgVideoOptions` as the base options object
  *
  * HSG:
- *   - All `hsg-*` classes (e.g. `hsg-frame`)
- *   - Any additional helpers or overlays we register here
+ * - All `hsg-*` classes (e.g. `hsg-frame`)
+ * - Any additional helpers or overlays we register here
  */
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
@@ -59,8 +59,8 @@ hs.transitions			= [];
 /* Alternative: fades / transitions (kept as a commented preset) */
 //hs.fadeInOut			= true;
 //hs.expandDuration		= 0;
-//hs.restoreDuration		= 0;
-//hs.transitions			= [ 'expand', 'crossfade' ];
+//hs.restoreDuration	= 0;
+//hs.transitions		= [ 'expand', 'crossfade' ];
 
 hs.allowSizeReduction	= true;
 hs.showCredits			= false;
@@ -137,8 +137,8 @@ hs.lang.restoreTitle =
  * instead of manual CSS tweaks.
  *
  * Presets:
- *   - classic: controls + thumbstrip anchored to the bottom of the viewport
- *   - stacked-top: thumbstrip followed by controls above the expander
+ * - classic: controls + thumbstrip anchored to the bottom of the viewport
+ * - stacked-top: thumbstrip followed by controls above the expander
  */
 var hsgControlLayoutPresets = {
 	classic: {
@@ -303,7 +303,7 @@ hs.stripItemFormatter = function ( anchor ) {
 var hsgVideoOptions = {
 	slideshowGroup: 'videos',
 	objectType: 'iframe',
-	width: 720,  // used as a baseline; auto-fit will override per click
+	width: 720, // used as a baseline; auto-fit will override per click
 	height: 480,
 	// `you-tube` is a vendor skin hook; `hsg-frame` is HSG-specific.
 	wrapperClassName: 'you-tube hsg-frame',
@@ -376,6 +376,62 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 // are used inside lists and MW wraps the first item in a floated thumb).
 // -------------------------------------------------------------------------
 
+// Shared selectors and helpers for thumb/list normalization.
+var HSG_LIST_ITEM_SELECTOR = 'ul > li, ol > li, dl > dd';
+var HSG_THUMB_SELECTOR = '.thumb';
+var HSG_GALLERY_TEXT_SELECTOR = '.gallery.text-break';
+
+function hsgAddClass( node, className ) {
+	if ( !node || !className ) {
+		return;
+	}
+	if ( node.classList ) {
+		node.classList.add( className );
+		return;
+	}
+	if ( typeof node.className === 'string' && node.className.indexOf( className ) === -1 ) {
+		node.className += (node.className ? ' ' : '') + className;
+	}
+}
+
+function hsgIsWhitespaceNode( node ) {
+	if ( !node ) {
+		return false;
+	}
+	if ( node.nodeType === 3 ) {
+		return !node.textContent || node.textContent.trim() === '';
+	}
+	if ( node.nodeType !== 1 ) {
+		return false;
+	}
+	if ( node.tagName === 'BR' ) {
+		return true;
+	}
+	if ( node.tagName === 'P' ) {
+		return !node.textContent || node.textContent.trim() === '';
+	}
+	return false;
+}
+
+function hsgIsSeparatorNode( node ) {
+	if ( !node ) {
+		return false;
+	}
+	if ( node.nodeType === 3 ) {
+		return !!( node.textContent && node.textContent.trim() );
+	}
+	if ( node.nodeType !== 1 ) {
+		return false;
+	}
+	var tag = node.tagName;
+	if ( tag === 'BR' || tag === 'HR' ) return true;
+	if ( /^H[1-6]$/.test( tag ) ) return true;
+	if ( tag === 'P' ) return true;
+	if ( tag === 'DIV' && node.style && node.style.clear ) return true;
+	if ( node.classList && node.classList.contains( 'clear' ) ) return true;
+	return false;
+}
+
 function hsgFixThumbFloat( root ) {
 	var scope = root || document;
 	var anchors = scope.querySelectorAll( '.thumb.tright .hsg-thumb, .thumb.tleft .hsg-thumb' );
@@ -394,7 +450,7 @@ function hsgFixThumbFloat( root ) {
 // Normalize list-based galleries and wrap thumbs within each list item so they stay together.
 function hsgNormalizeListGalleries( root ) {
 	var scope = root || document;
-	var listItems = scope.querySelectorAll( 'ul > li, ol > li, dl > dd' );
+	var listItems = scope.querySelectorAll( HSG_LIST_ITEM_SELECTOR );
 
 	listItems.forEach( function ( li ) {
 		if ( li.querySelector( ':scope > .hsg-list-gallery-wrap' ) ) {
@@ -402,7 +458,7 @@ function hsgNormalizeListGalleries( root ) {
 		}
 
 		var directBlocks = Array.prototype.slice.call(
-			li.querySelectorAll( ':scope > .gallery.text-break, :scope > .thumb' )
+			li.querySelectorAll( ':scope > ' + HSG_GALLERY_TEXT_SELECTOR + ', :scope > .thumb' )
 		);
 
 		// Drop empty gallery placeholders to avoid wrapping dead nodes.
@@ -422,270 +478,231 @@ function hsgNormalizeListGalleries( root ) {
 		var wrap = document.createElement( 'div' );
 		wrap.className = 'hsg-list-gallery-wrap';
 		li.insertBefore( wrap, directBlocks[0] );
+
 		directBlocks.forEach( function ( node ) {
 			wrap.appendChild( node );
 		} );
 	} );
 }
 
-	// 2025-12-01 HSG: Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs.
-	function hsgNormalizeThumbBlocks( root ) {
-		var scope = root || document;
+// 2025-12-01 HSG: Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs.
+function hsgNormalizeThumbBlocks( root ) {
+	var scope = root || document;
 
-		var isSeparator = function ( node ) {
-			if ( !node ) return false;
-			if ( node.nodeType === 3 ) {
-				return !!( node.textContent && node.textContent.trim() );
+	// Unwrap <p> around gallery text thumbs if present.
+	var galleries = scope.querySelectorAll( HSG_GALLERY_TEXT_SELECTOR );
+	galleries.forEach( function ( gallery ) {
+		hsgAddClass( gallery, 'hsg-gallery-block' );
+		var pChild = gallery.querySelector( ':scope > p' );
+		var anchor = pChild ? pChild.querySelector( 'a' ) : null;
+		if ( pChild && anchor && !gallery.querySelector( ':scope > .thumb' ) ) {
+			var img = anchor.querySelector( 'img' );
+			var inner = document.createElement( 'div' );
+			inner.className = 'thumbinner hsg-thumb';
+			if ( img && img.width ) {
+				inner.style.width = ( img.width + 2 ) + 'px';
 			}
-			if ( node.nodeType !== 1 ) return false;
-			var tag = node.tagName;
-			if ( tag === 'BR' || tag === 'HR' ) return true;
-			if ( /^H[1-6]$/.test( tag ) ) return true;
-			if ( tag === 'P' ) return true;
-			if ( tag === 'DIV' && node.style && node.style.clear ) return true;
-			if ( node.classList && node.classList.contains( 'clear' ) ) return true;
-			return false;
-		};
+			inner.appendChild( anchor );
+			var thumb = document.createElement( 'div' );
+			thumb.className = 'thumb hsg-thumb hsg-thumb-normalized';
+			thumb.appendChild( inner );
+			gallery.insertBefore( thumb, pChild );
+			pChild.remove();
+		}
+	} );
 
-		// Unwrap <p> around gallery text thumbs if present.
-		var galleries = scope.querySelectorAll( '.gallery.text-break' );
-		galleries.forEach( function ( gallery ) {
-			if ( gallery.className.indexOf( 'hsg-gallery-block' ) === -1 ) {
-				gallery.className += (gallery.className ? ' ' : '') + 'hsg-gallery-block';
-			}
-			var pChild = gallery.querySelector( ':scope > p' );
-			var anchor = pChild ? pChild.querySelector( 'a' ) : null;
-			if ( pChild && anchor && !gallery.querySelector( ':scope > .thumb' ) ) {
-				var img = anchor.querySelector( 'img' );
-				var inner = document.createElement( 'div' );
-				inner.className = 'thumbinner hsg-thumb';
-				if ( img && img.width ) {
-					inner.style.width = ( img.width + 2 ) + 'px';
+	// Apply HSG hooks to thumbs, inners, anchors, captions.
+	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( function ( t ) {
+		hsgAddClass( t, 'hsg-thumb' );
+	} );
+	scope.querySelectorAll( '.thumbinner' ).forEach( function ( ti ) {
+		hsgAddClass( ti, 'hsg-thumb' );
+	} );
+	scope.querySelectorAll( '.thumb a, ' + HSG_GALLERY_TEXT_SELECTOR + ' a' ).forEach( function ( a ) {
+		hsgAddClass( a, 'hsg-thumb' );
+	} );
+	scope.querySelectorAll( '.thumbcaption, .gallerytext' ).forEach( function ( cap ) {
+		hsgAddClass( cap, 'hsg-caption' );
+		cap.querySelectorAll( 'a' ).forEach( function ( link ) {
+			hsgAddClass( link, 'hsg-thumb' );
+		} );
+	} );
+
+	// Wrap loose sibling thumbs (non-list) together until a separator.
+	var parents = new Set();
+	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( function ( t ) {
+		if ( t.parentElement ) {
+			parents.add( t.parentElement );
+		}
+	} );
+	parents.forEach( function ( parent ) {
+		if ( parent.tagName === 'LI' || parent.tagName === 'DD' ) {
+			return;
+		}
+		var nodes = Array.prototype.slice.call( parent.childNodes || [] );
+		var run = [];
+		nodes.forEach( function ( node ) {
+			if ( hsgIsSeparatorNode( node ) ) {
+				if ( run.length > 1 ) {
+					var wrap = document.createElement( 'div' );
+					wrap.className = 'hsg-gallery-wrap';
+					parent.insertBefore( wrap, run[0] );
+					run.forEach( function ( n ) { wrap.appendChild( n ); } );
 				}
-				inner.appendChild( anchor );
-				var thumb = document.createElement( 'div' );
-				thumb.className = 'thumb hsg-thumb hsg-thumb-normalized';
-				thumb.appendChild( inner );
-				gallery.insertBefore( thumb, pChild );
-				pChild.remove();
+				run = [];
+				return;
 			}
-		} );
-
-		// Apply HSG hooks to thumbs, inners, anchors, captions.
-		scope.querySelectorAll( '.thumb' ).forEach( function ( t ) {
-			if ( t.className.indexOf( 'hsg-thumb' ) === -1 ) {
-				t.className += (t.className ? ' ' : '') + 'hsg-thumb';
-			}
-		} );
-		scope.querySelectorAll( '.thumbinner' ).forEach( function ( ti ) {
-			if ( ti.className.indexOf( 'hsg-thumb' ) === -1 ) {
-				ti.className += (ti.className ? ' ' : '') + 'hsg-thumb';
-			}
-		} );
-		scope.querySelectorAll( '.thumb a, .gallery.text-break a' ).forEach( function ( a ) {
-			if ( a.className.indexOf( 'hsg-thumb' ) === -1 ) {
-				a.className += (a.className ? ' ' : '') + 'hsg-thumb';
-			}
-		} );
-		scope.querySelectorAll( '.thumbcaption, .gallerytext' ).forEach( function ( cap ) {
-			if ( cap.className.indexOf( 'hsg-caption' ) === -1 ) {
-				cap.className += (cap.className ? ' ' : '') + 'hsg-caption';
-			}
-			cap.querySelectorAll( 'a' ).forEach( function ( link ) {
-				if ( link.className.indexOf( 'hsg-thumb' ) === -1 ) {
-					link.className += (link.className ? ' ' : '') + 'hsg-thumb';
+			if ( node.nodeType === 1 && node.classList && node.classList.contains( 'thumb' ) ) {
+				run.push( node );
+			} else if ( node.nodeType === 3 && !node.textContent.trim() ) {
+				// ignore whitespace
+			} else {
+				if ( run.length > 1 ) {
+					var wrap2 = document.createElement( 'div' );
+					wrap2.className = 'hsg-gallery-wrap';
+					parent.insertBefore( wrap2, run[0] );
+					run.forEach( function ( n ) { wrap2.appendChild( n ); } );
 				}
-			} );
-		} );
-
-		// Wrap loose sibling thumbs (non-list) together until a separator.
-		var parents = new Set();
-		scope.querySelectorAll( '.thumb' ).forEach( function ( t ) {
-			if ( t.parentElement ) parents.add( t.parentElement );
-		} );
-		parents.forEach( function ( parent ) {
-			if ( parent.tagName === 'LI' || parent.tagName === 'DD' ) return;
-			var nodes = Array.prototype.slice.call( parent.childNodes || [] );
-			var run = [];
-			nodes.forEach( function ( node ) {
-				if ( isSeparator( node ) ) {
-					if ( run.length > 1 ) {
-						var wrap = document.createElement( 'div' );
-						wrap.className = 'hsg-gallery-wrap';
-						parent.insertBefore( wrap, run[0] );
-						run.forEach( function ( n ) { wrap.appendChild( n ); } );
-					}
-					run = [];
-					return;
-				}
-				if ( node.nodeType === 1 && node.classList && node.classList.contains( 'thumb' ) ) {
-					run.push( node );
-				} else if ( node.nodeType === 3 && !node.textContent.trim() ) {
-					// ignore whitespace
-				} else {
-					if ( run.length > 1 ) {
-						var wrap2 = document.createElement( 'div' );
-						wrap2.className = 'hsg-gallery-wrap';
-						parent.insertBefore( wrap2, run[0] );
-						run.forEach( function ( n ) { wrap2.appendChild( n ); } );
-					}
-					run = [];
-				}
-			} );
-			if ( run.length > 1 ) {
-				var wrapFinal = document.createElement( 'div' );
-				wrapFinal.className = 'hsg-gallery-wrap';
-				parent.insertBefore( wrapFinal, run[0] );
-				run.forEach( function ( n ) { wrapFinal.appendChild( n ); } );
+				run = [];
 			}
 		} );
-	}
+		if ( run.length > 1 ) {
+			var wrapFinal = document.createElement( 'div' );
+			wrapFinal.className = 'hsg-gallery-wrap';
+			parent.insertBefore( wrapFinal, run[0] );
+			run.forEach( function ( n ) { wrapFinal.appendChild( n ); } );
+		}
+	} );
+}
 
-	// 2025-12-04 HSG: If a thumb run got wrapped outside a list (e.g. from block HTML in list items),
-	// move the wrapper back into the nearest list item so bullets stay with their gallery.
-	function hsgRelocateWrapsIntoLists( root ) {
-		var scope = root || document;
+// 2025-12-04 HSG: If a thumb run got wrapped outside a list (e.g. from block HTML in list items),
+// move the wrapper back into the nearest list item so bullets stay with their gallery.
+function hsgRelocateWrapsIntoLists( root ) {
+	var scope = root || document;
 
-		var isList = function ( node ) {
-			return !!node && (node.tagName === 'UL' || node.tagName === 'OL' || node.tagName === 'DL');
-		};
+	var isList = function ( node ) {
+		return !!node && (node.tagName === 'UL' || node.tagName === 'OL' || node.tagName === 'DL');
+	};
 
-		var isListItem = function ( node ) {
-			return !!node && (node.tagName === 'LI' || node.tagName === 'DD');
-		};
+	var isListItem = function ( node ) {
+		return !!node && (node.tagName === 'LI' || node.tagName === 'DD');
+	};
 
-		var isWhitespace = function ( node ) {
-			if ( !node ) return false;
-			if ( node.nodeType === 3 ) {
-				return !node.textContent || node.textContent.trim() === '';
+	var deepestItemFromNode = function ( node ) {
+		if ( !node ) return null;
+
+		if ( isListItem( node ) ) {
+			var nestedList = node.querySelector( ':scope > ul:last-of-type, :scope > ol:last-of-type, :scope > dl:last-of-type' );
+			if ( nestedList ) {
+				var deeper = deepestItemFromNode( nestedList );
+				return deeper || node;
 			}
-			if ( node.nodeType !== 1 ) {
-				return false;
-			}
-			if ( node.tagName === 'BR' ) {
-				return true;
-			}
-			if ( node.tagName === 'P' ) {
-				return !node.textContent || node.textContent.trim() === '';
-			}
-			return false;
-		};
+			return node;
+		}
 
-		var deepestItemFromNode = function ( node ) {
-			if ( !node ) return null;
-
-			if ( isListItem( node ) ) {
-				var nestedList = node.querySelector( ':scope > ul:last-of-type, :scope > ol:last-of-type, :scope > dl:last-of-type' );
-				if ( nestedList ) {
-					var deeper = deepestItemFromNode( nestedList );
-					return deeper || node;
-				}
-				return node;
+		if ( isList( node ) ) {
+			var tail = node.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+			if ( !tail ) {
+				return null;
 			}
+			return deepestItemFromNode( tail ) || tail;
+		}
 
-			if ( isList( node ) ) {
-				var tail = node.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
-				if ( !tail ) {
-					return null;
-				}
-				return deepestItemFromNode( tail ) || tail;
+		return null;
+	};
+
+	var findListContext = function ( wrap ) {
+		var cur = wrap.previousSibling;
+		while ( cur ) {
+			if ( hsgIsWhitespaceNode( cur ) ) {
+				cur = cur.previousSibling;
+				continue;
 			}
-
-			return null;
-		};
-
-		var findListContext = function ( wrap ) {
-			var cur = wrap.previousSibling;
-			while ( cur ) {
-				if ( isWhitespace( cur ) ) {
+			if ( cur.nodeType === 1 ) {
+				if ( cur.classList && cur.classList.contains( 'hsg-gallery-wrap' ) ) {
 					cur = cur.previousSibling;
 					continue;
 				}
-				if ( cur.nodeType === 1 ) {
-					if ( cur.classList && cur.classList.contains( 'hsg-gallery-wrap' ) ) {
-						cur = cur.previousSibling;
+				if ( isListItem( cur ) || isList( cur ) ) {
+					return cur;
+				}
+			}
+			break;
+		}
+		return null;
+	};
+
+	var findTargetItem = function ( wrap ) {
+		// 1) Nearest prior sibling that is a list or list item.
+		var ctx = findListContext( wrap );
+		var target = deepestItemFromNode( ctx );
+		if ( target ) {
+			return target;
+		}
+
+		// 2) Walk up ancestors; at each level, inspect prior siblings for lists/items.
+		var ancestor = wrap.parentElement;
+		while ( ancestor ) {
+			var prev = ancestor.previousSibling;
+			while ( prev ) {
+				if ( hsgIsWhitespaceNode( prev ) ) {
+					prev = prev.previousSibling;
+					continue;
+				}
+				if ( prev.nodeType === 1 ) {
+					if ( prev.classList && prev.classList.contains( 'hsg-gallery-wrap' ) ) {
+						prev = prev.previousSibling;
 						continue;
 					}
-					if ( isListItem( cur ) || isList( cur ) ) {
-						return cur;
+					var candidate = deepestItemFromNode( prev );
+					if ( candidate ) {
+						return candidate;
 					}
 				}
 				break;
 			}
-			return null;
-		};
-
-		var findTargetItem = function ( wrap ) {
-			// 1) Nearest prior sibling that is a list or list item.
-			var ctx = findListContext( wrap );
-			var target = deepestItemFromNode( ctx );
-			if ( target ) {
-				return target;
+			if ( isListItem( ancestor ) ) {
+				// Already inside a list item; nothing to relocate.
+				return null;
 			}
+			ancestor = ancestor.parentElement;
+		}
 
-			// 2) Walk up ancestors; at each level, inspect prior siblings for lists/items.
-			var ancestor = wrap.parentElement;
-			while ( ancestor ) {
-				var prev = ancestor.previousSibling;
-				while ( prev ) {
-					if ( isWhitespace( prev ) ) {
-						prev = prev.previousSibling;
-						continue;
-					}
-					if ( prev.nodeType === 1 ) {
-						if ( prev.classList && prev.classList.contains( 'hsg-gallery-wrap' ) ) {
-							prev = prev.previousSibling;
-							continue;
-						}
-						var candidate = deepestItemFromNode( prev );
-						if ( candidate ) {
-							return candidate;
-						}
-					}
-					break;
-				}
-				if ( isListItem( ancestor ) ) {
-					// Already inside a list item; nothing to relocate.
-					return null;
-				}
-				ancestor = ancestor.parentElement;
-			}
+		return null;
+	};
 
-			return null;
-		};
+	scope.querySelectorAll( '.hsg-gallery-wrap' ).forEach( function ( wrap ) {
+		if ( !wrap.parentElement ) return;
+		// Already inside a list item/description item.
+		if ( wrap.parentElement.tagName === 'LI' || wrap.parentElement.tagName === 'DD' ) {
+			return;
+		}
 
-		scope.querySelectorAll( '.hsg-gallery-wrap' ).forEach( function ( wrap ) {
-			if ( !wrap.parentElement ) return;
-			// Already inside a list item/description item.
-			if ( wrap.parentElement.tagName === 'LI' || wrap.parentElement.tagName === 'DD' ) {
-				return;
-			}
+		var target = findTargetItem( wrap );
+		if ( !target ) {
+			return;
+		}
 
-			var target = findTargetItem( wrap );
-			if ( !target ) {
-				return;
-			}
+		if ( wrap.className.indexOf( 'hsg-list-gallery-wrap' ) === -1 ) {
+			wrap.className += (wrap.className ? ' ' : '') + 'hsg-list-gallery-wrap';
+		}
 
-			if ( wrap.className.indexOf( 'hsg-list-gallery-wrap' ) === -1 ) {
-				wrap.className += (wrap.className ? ' ' : '') + 'hsg-list-gallery-wrap';
-			}
+		target.appendChild( wrap );
+	} );
+}
 
-			target.appendChild( wrap );
-		} );
-	}
-
-	if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
-		mw.hook( 'wikipage.content' ).add( function ( $content ) {
-			hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
-			hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
-			hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
-			hsgRelocateWrapsIntoLists( $content && $content[0] ? $content[0] : document );
-		} );
-	} else {
-		document.addEventListener( 'DOMContentLoaded', function () {
-			hsgFixThumbFloat( document );
-			hsgNormalizeListGalleries( document );
-			hsgNormalizeThumbBlocks( document );
-			hsgRelocateWrapsIntoLists( document );
-		} );
-	}
+if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
+	mw.hook( 'wikipage.content' ).add( function ( $content ) {
+		hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
+		hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
+		hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
+		hsgRelocateWrapsIntoLists( $content && $content[0] ? $content[0] : document );
+	} );
+} else {
+	document.addEventListener( 'DOMContentLoaded', function () {
+		hsgFixThumbFloat( document );
+		hsgNormalizeListGalleries( document );
+		hsgNormalizeThumbBlocks( document );
+		hsgRelocateWrapsIntoLists( document );
+	} );
+}

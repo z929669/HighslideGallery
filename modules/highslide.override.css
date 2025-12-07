@@ -1,6 +1,6 @@
 /*
  * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
- * @Copyright (C) 2012  Brian McCloskey, David Van Winkle, Step Modifications, Inc.
+ * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
  * GNU General Public License as published by the Free Software Foundation; either version 2 of the
@@ -48,7 +48,7 @@
 }
 
 /* Number + caption tone */
-.highslide-number  {
+.highslide-number {
 	color: var(--hsg-caption-number);
 }
 
@@ -183,7 +183,7 @@
 }
 
 /* -------------------------------------------------------------------------
- *  Page thumbs and list layout
+ * Page thumbs and list layout
  * ------------------------------------------------------------------------- */
 
 /* Optionally disable the border */
@@ -244,8 +244,8 @@ a.link-youtube:not(.hsg-ytb-thumb) {
 
 .you-tube .highslide-caption,
 .you-tube.highslide-wrapper {
-		background: var(--hsg-ytb-bg);
-		font-weight: bold
+	background: var(--hsg-ytb-bg);
+	font-weight: bold;
 }
 
 .you-tube .highslide-html,
