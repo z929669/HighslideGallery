@@ -176,6 +176,24 @@ class HighslideGallery {
 	}
 
 	/**
+	 * Interpret common truthy values for flag attributes.
+	 *
+	 * @param mixed $val
+	 */
+	private static function isTruthy( $val ): bool {
+		if ( $val === true ) {
+			return true;
+		}
+		if ( $val === false || $val === null ) {
+			return false;
+		}
+
+		$normalized = strtolower( trim( (string)$val ) );
+
+		return in_array( $normalized, [ '1', 'true', 'yes', 'y' ], true );
+	}
+
+	/**
 	 * Build plain-text and HTML caption fragments with styling hooks.
 	 *
 	 * @param ?string $hsgid Gallery id / label
@@ -329,6 +347,15 @@ class HighslideGallery {
 			}
 		}
 
+		$hideCaptionFlag = false;
+		if ( array_key_exists( 'nocaption', $attributes ) ) {
+			$hideCaptionFlag = self::isTruthy( $attributes['nocaption'] );
+			unset( $attributes['nocaption'] );
+		} elseif ( array_key_exists( 'hidecaption', $attributes ) ) {
+			$hideCaptionFlag = self::isTruthy( $attributes['hidecaption'] );
+			unset( $attributes['hidecaption'] );
+		}
+
 		// -----------------------------------------------------------------
 		// 2. Normalise title / caption / linktext (unescaped)
 		// -----------------------------------------------------------------
@@ -345,7 +372,7 @@ class HighslideGallery {
 		} elseif ( $titleRaw !== '' ) {
 			$captionDisplay = $titleRaw;
 		} else {
-			$captionDisplay = $content;
+			$captionDisplay = 'Image';
 		}
 
 		// Visible link text for INLINE variant.
@@ -466,6 +493,8 @@ class HighslideGallery {
 			$titleObj,
 			$captionDisplay
 		);
+		$autoHideThumbCaption = ( $captionRaw === '' && $titleRaw === '' );
+		$suppressThumbCaption = $hideCaptionFlag || $autoHideThumbCaption;
 
 		$captionEsc = htmlspecialchars( $captionPlainThumb, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 
@@ -497,7 +526,7 @@ class HighslideGallery {
 		}
 
 		$captionHtml = '';
-		if ( $captionPlainThumb !== '' ) {
+		if ( !$suppressThumbCaption && $captionPlainThumb !== '' ) {
 			$captionHtml = '<div class="thumbcaption hsg-caption">' . $captionHtmlThumb . '</div>';
 		}
 
@@ -655,6 +684,15 @@ class HighslideGallery {
 			}
 		}
 
+		$hideCaptionFlag = false;
+		if ( array_key_exists( 'nocaption', $attributes ) ) {
+			$hideCaptionFlag = self::isTruthy( $attributes['nocaption'] );
+			unset( $attributes['nocaption'] );
+		} elseif ( array_key_exists( 'hidecaption', $attributes ) ) {
+			$hideCaptionFlag = self::isTruthy( $attributes['hidecaption'] );
+			unset( $attributes['hidecaption'] );
+		}
+
 		// Build player URL with query flags.
 		$query = [];
 		if ( $autoplayOn ) {
@@ -706,6 +744,9 @@ class HighslideGallery {
 			null,
 			$captionDisplay
 		);
+
+		$autoHideThumbCaption = ( $captionRaw === '' && $titleRaw === '' );
+		$suppressThumbCaption = $hideCaptionFlag || $autoHideThumbCaption;
 
 		$titleEsc = htmlspecialchars(
 			$captionPlainNoId !== '' ? $captionPlainNoId : $titleForAttr,
@@ -762,7 +803,7 @@ class HighslideGallery {
 				'" alt="' . $captionPlainEsc . '"' . $style . ' />';
 			$anchor .= '</a>';
 
-			$captionHtmlBlock = $captionPlainNoId !== ''
+			$captionHtmlBlock = ( !$suppressThumbCaption && $captionPlainNoId !== '' )
 				? '<div class="thumbcaption hsg-caption">' .
 					// If captionHtmlNoId is plain text, escape it.
 					( strpos( $captionHtmlNoId, '<span' ) === false

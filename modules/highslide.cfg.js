@@ -691,12 +691,55 @@ function hsgRelocateWrapsIntoLists( root ) {
 	} );
 }
 
+// 2025-12-08 HSG: If an inline HSG ended up in a paragraph right after a list item,
+// move that paragraph's contents back into the last list item to keep bullets with the inline HSG.
+function hsgRelocateInlineIntoLists( root ) {
+	var scope = root || document;
+
+	var isInlineOnlyParagraph = function ( p ) {
+		if ( !p || p.tagName !== 'P' ) {
+			return false;
+		}
+		var bad = p.querySelector( 'div, ul, ol, dl, table, blockquote, p' );
+		return !bad;
+	};
+
+	var moveIntoLastItem = function ( list, para ) {
+		if ( !list || !para ) {
+			return;
+		}
+		var lastChild = list.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+		if ( !lastChild ) {
+			return;
+		}
+		while ( para.firstChild ) {
+			lastChild.appendChild( para.firstChild );
+		}
+		para.remove();
+	};
+
+	scope.querySelectorAll( 'p' ).forEach( function ( p ) {
+		if ( !isInlineOnlyParagraph( p ) ) {
+			return;
+		}
+		if ( !p.querySelector( '.hsg-inline, .link-youtube.hsg-thumb' ) ) {
+			return;
+		}
+		var prev = p.previousElementSibling;
+		if ( !prev || ( prev.tagName !== 'OL' && prev.tagName !== 'UL' && prev.tagName !== 'DL' ) ) {
+			return;
+		}
+		moveIntoLastItem( prev, p );
+	} );
+}
+
 if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 	mw.hook( 'wikipage.content' ).add( function ( $content ) {
 		hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
 		hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
 		hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
 		hsgRelocateWrapsIntoLists( $content && $content[0] ? $content[0] : document );
+		hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
 	} );
 } else {
 	document.addEventListener( 'DOMContentLoaded', function () {
@@ -704,5 +747,6 @@ if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 		hsgNormalizeListGalleries( document );
 		hsgNormalizeThumbBlocks( document );
 		hsgRelocateWrapsIntoLists( document );
+		hsgRelocateInlineIntoLists( document );
 	} );
 }
