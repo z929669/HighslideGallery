@@ -36,7 +36,7 @@ Add to `composer.local.json`:
 ```json
 {
   "require": {
-    "z929669/highslidegallery": "^2.0"
+    "mediawikiext/highslidegallery": "^2.0"
   },
   "extra": {
     "merge-plugin": {
@@ -51,7 +51,7 @@ Add to `composer.local.json`:
 Then run:
 
 ```
-composer update z929669/highslidegallery -W
+composer update mediawikiext/highslidegallery -W
 ```
 
 This installs into `extensions/HighslideGallery/` from Packagist.
