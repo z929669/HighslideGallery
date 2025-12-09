@@ -1,5 +1,5 @@
 /*
- * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
+ * HighslideGallery adds highslide-style image/galleries and YouTube overlays to MediaWiki pages.
  * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -79,7 +79,7 @@ hs.closeOnClick			= false;
 
 // Show image index in the caption area (vendor feature, configured here).
 hs.numberPosition		= 'caption';
-hs.lang.number			= 'Member %1 of %2'
+hs.lang.number			= 'Member %1 of %2';
 
 // Cancel Highslide's default "click image to close".
 if ( hs.Expander && hs.Expander.prototype ) {
@@ -122,11 +122,36 @@ if ( hs.Expander && hs.Expander.prototype ) {
 
 hs.lang = hs.lang || {};
 
-// Default "restore" tooltip was misleading ("Click to close image...").
-// Our UX: image click does nothing; use controls, keys, or dimmer to close.
-hs.lang.restoreTitle =
-	'Click/drag to move. Use arrow keys or on-frame controls to navigate. ' +
-	'Press Esc, or click the close button or margins to exit.';
+function hsgMsg( key, fallback ) {
+	if ( typeof mw !== 'undefined' && typeof mw.message === 'function' ) {
+		var m = mw.message( key );
+		if ( m && typeof m.exists === 'function' && m.exists() ) {
+			var txt = m.text();
+			if ( typeof txt === 'string' && txt.trim() !== '' ) {
+				return txt;
+			}
+		}
+	}
+	return fallback;
+}
+
+// Fine tuning for hovertext and control tooltips.
+var hsgRestoreTitleDefault =
+	'Click/drag to move image. Use controls or keyboard arrow keys to navigate, f key ' +
+	'to zoom in/out, spacebar to play/pause. Press Esc, or click close/margins to exit.';
+
+hs.lang.loadingText		= hsgMsg( 'hsg-loading-text', hs.lang.loadingText );
+hs.lang.loadingTitle	= hsgMsg( 'hsg-loading-title', hs.lang.loadingTitle );
+hs.lang.focusTitle		= hsgMsg( 'hsg-focus-title', hs.lang.focusTitle );
+hs.lang.fullExpandTitle	= hsgMsg( 'hsg-full-expand-title', hs.lang.fullExpandTitle );
+hs.lang.previousTitle	= hsgMsg( 'hsg-previous-title', hs.lang.previousTitle );
+hs.lang.nextTitle		= hsgMsg( 'hsg-next-title', hs.lang.nextTitle );
+hs.lang.moveTitle		= hsgMsg( 'hsg-move-title', hs.lang.moveTitle );
+hs.lang.closeTitle		= hsgMsg( 'hsg-close-title', hs.lang.closeTitle );
+hs.lang.playTitle		= hsgMsg( 'hsg-play-title', hs.lang.playTitle );
+hs.lang.pauseTitle		= hsgMsg( 'hsg-pause-title', hs.lang.pauseTitle );
+hs.lang.number			= hsgMsg( 'hsg-number', hs.lang.number || 'Member %1 of %2' );
+hs.lang.restoreTitle	= hsgMsg( 'hsg-hover-instructions', hsgRestoreTitleDefault );
 
 // -------------------------------------------------------------------------
 // Overlays & controls

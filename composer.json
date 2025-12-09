@@ -1,6 +1,6 @@
 {
 	"name": "z929669/highslidegallery",
-	"description": "MediaWiki extension: HighslideGallery integrates Highslide JS to display images and YouTube videos in an in-page gallery/lightbox.",
+	"description": "MediaWiki extension: HighslideGallery leverages Highslide JS-powered galleries for images and YouTube videos: supports thumbnails or inline anchor text, slideshow grouping via hsgid and MediaWiki-style captions within an interactive overlay.",
 	"type": "mediawiki-extension",
 	"license": "GPL-2.0",
 	"keywords": ["mediawiki", "extension", "gallery", "lightbox", "highslide", "images", "youtube"],

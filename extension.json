@@ -1,7 +1,7 @@
 {
 	"name": "HighslideGallery",
 	"version": "2.0.0",
-	"author": ["Brian McCloskey", "David Van Winkle"],
+	"author": ["Brian McCloskey", "David Van Winkle", "Step Modifications, Inc."],
 	"license-name": "GPL-2.0",
 	"url": "https://www.mediawiki.org/wiki/Extension:HighslideGallery",
 	"descriptionmsg": "hsg-desc",
@@ -15,6 +15,20 @@
 			"scripts": [ "highslide-full.js", "highslide.cfg.js" ],
 			"styles": [ "highslide.css", "highslide.override.css" ],
 			"dependencies": [ "jquery", "mediawiki.util" ],
+			"messages": [
+				"hsg-hover-instructions",
+				"hsg-loading-text",
+				"hsg-loading-title",
+				"hsg-focus-title",
+				"hsg-full-expand-title",
+				"hsg-previous-title",
+				"hsg-next-title",
+				"hsg-move-title",
+				"hsg-close-title",
+				"hsg-play-title",
+				"hsg-pause-title",
+				"hsg-number"
+			],
 			"position": "top"
 		}
 	},

@@ -1,5 +1,5 @@
 /*
- * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
+ * HighslideGallery adds highslide-style image/galleries and YouTube overlays to MediaWiki pages.
  * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -153,6 +153,80 @@
 	line-height: 1.1rem;
 }
 
+/* Icon-only controls using shipped SVGs */
+.highslide-viewport .highslide-thumbstrip-horizontal table {
+	margin-left: 0;
+}
+
+.text-controls li {
+	margin-left: 5px;
+}
+
+.text-controls .highslide-controls {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	margin: 0 0 0 -2px;
+	padding: 0;
+	background: none;
+}
+
+.text-controls .highslide-controls li {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	list-style: none;
+	background: none !important;
+}
+
+.text-controls .highslide-controls a {
+	width: 26px;
+	height: 26px;
+	left: 0;
+	border-radius: 50%;
+	background-color: #d0d0d0 !important;
+	background-position: center center !important;
+	background-size: 15px 15px !important;
+}
+
+.text-controls .highslide-controls a.disabled {
+	opacity: 0.75;
+	filter: contrast(30%);
+	-webkit-filter: contrast(30%);
+	background-position: center center !important;
+}
+
+.text-controls .highslide-controls a span {
+	display: none;
+}
+
+.text-controls .highslide-controls .highslide-previous a {
+	background-image: url("graphics/previous-dark.svg") !important;
+}
+
+.text-controls .highslide-controls .highslide-next a {
+	background-image: url("graphics/next-dark.svg") !important;
+}
+
+.text-controls .highslide-controls .highslide-play a {
+	background-image: url("graphics/play-dark.svg") !important;
+}
+
+.text-controls .highslide-controls .highslide-full-expand a {
+	background-image: url("graphics/full-screen-dark.svg") !important;
+}
+
+.text-controls .highslide-controls .highslide-full-expand a.hsg-zoomed {
+	background-image: url("graphics/close-full-screen-dark.svg") !important;
+}
+
+.text-controls .highslide-controls .highslide-move,
+.text-controls .highslide-controls .highslide-pause,
+.text-controls .highslide-controls .highslide-close {
+	display: none !important;
+}
+
 /* -------------------------------------------------------------------------
  * Thumbstrip tweaks
  * ------------------------------------------------------------------------- */
@@ -237,7 +311,7 @@
 		url("graphics/image-lite.svg") center right no-repeat;
 	background-size: 1rem 1rem;
 	padding: 0 1.1rem 0 1.1rem;
-	margin: 0 0.1rem 0 0.1rem;
+	margin: 0 0.1rem 0 0.3rem;
 }
 
 /* Decorate ONLY plain text YouTube links, not thumbs */

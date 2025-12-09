@@ -1,8 +1,8 @@
 /** 
  * Name:    Highslide JS
- * Version: 5.0.0 (2016-05-24)
+ * Version: 5.1.0 (2025-12-10)
  * Config:  default +events +unobtrusive +imagemap +slideshow +positioning +transitions +viewport +thumbstrip +inline +ajax +iframe +flash
- * Author:  Torstein Hønsi
+ * Author:  Torstein Hønsi, David Van Winkle
  * Support: www.highslide.com/support
  * License: MIT
  */
@@ -13,7 +13,7 @@ lang : {
 	loadingText : 'Loading...',
 	loadingTitle : 'Click to cancel',
 	focusTitle : 'Click to bring to front',
-	fullExpandTitle : 'Expand to actual size (f)',
+	fullExpandTitle : 'Toggle zoom (f)',
 	creditsText : 'Powered by <i>Highslide JS</i>',
 	creditsTitle : 'Go to the Highslide JS homepage',
 	previousText : 'Previous',
@@ -595,7 +595,16 @@ keyHandler : function(e) {
 	var op = null;
 	switch (e.keyCode) {
 		case 70: // f
-			if (exp) exp.doFullExpand();
+			if (exp) {
+				if (hs.fullExpandToggle && typeof exp.toggleFullExpand === 'function') {
+					var zoomed = exp.toggleFullExpand();
+					if (exp.slideshow && typeof exp.slideshow.updateZoomLabel === 'function') {
+						exp.slideshow.updateZoomLabel(zoomed);
+					}
+				} else {
+					exp.doFullExpand();
+				}
+			}
 			return true;
 		case 32: // Space
 			op = 2;
@@ -3317,11 +3326,18 @@ hs.Slideshow = function (expKey, options) {
 };
 hs.Slideshow.prototype = {
 	// 2025-11-29 HSG: toggle label text when zooming
-	updateZoomLabel: function (zoomed) {
+updateZoomLabel: function (zoomed) {
 		if (!this.btn || !this.btn['full-expand']) return;
 		var a = this.btn['full-expand'].getElementsByTagName('a')[0];
 		var span = a ? a.getElementsByTagName('span')[0] : null;
 		if (span) span.textContent = zoomed ? 'Fit' : '1:1';
+		if (a && a.classList) {
+			if (zoomed) {
+				a.classList.add('hsg-zoomed');
+			} else {
+				a.classList.remove('hsg-zoomed');
+			}
+		}
 	},
 getControls: function() {
 	// 2025-11-21 HSG: Create controls detached initially to avoid briefly rendering the

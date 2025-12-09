@@ -1,6 +1,6 @@
 <?php
 /*
- * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
+ * HighslideGallery adds highslide-style image/galleries and YouTube overlays to MediaWiki pages.
  * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
