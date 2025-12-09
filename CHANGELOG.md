@@ -3,7 +3,33 @@ All notable changes are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [UNRELEASED-2.0.0]
+## [UNRELEASED]
+
+## [2.0.0] - 2025-12-09
+- All testing for this release was done on MW v1.39.7 and PHP v8.3.26.
+
+### Added
+- Full expand toggle (fit/1:1) with zoom/pan support; `f` key uses the same toggle path.
+- SVG control icons, disabled-state dimming, and configurable `wgHSGControlsPreset` layout.
+- Unified caption spans/classes for images and video (`hsg-caption-gallery/title/caption`), plus optional `nocaption` to suppress thumb captions and improved fallback (`Image` instead of raw path).
+- New ResourceLoader i18n strings for hover instructions, control tooltips, loading text, and member counter.
+- YouTube grouping with images in the same HSG, auto-sized thumbs, and inline link support.
+
+### Changed
+- **Breaking (pre-2.0.0)**: 
+  - Drops support for MediaWiki <1.39 (ResourceLoader-only, modern hooks)
+  - Drops support for the old `highslide` parameter for gallery grouping ID; instead, use `hsgid`
+  - Replaces legacy caption markup with span-wrapped classes (`hsg-caption-gallery/title/caption`), so some styling elements will require revision.
+- Default is thumbnail when `inline` is omitted; inline links remain opt-in.
+- List handling overhauled: thumbs and inline HSGs now nest correctly across ordered/unordered/description lists and mixed/deep sublists.
+- Caption/data model normalized: bar-separated `title | caption` without stray `hsgid` in thumbs; user `hsgid` appears only inside the overlay.
+- Highslide core tuned for overlay visibility during zoom, control alignment, and consistent disabled-state styling.
+
+### Fixed
+- Prevent slideshow/autoplay from closing the expander at end-of-run.
+- Stale controlbar sprites at origin removed; thumb controls stay aligned.
+- Inline list HSGs no longer break list structure; no caption duplication between images/videos.
+
 ### 2025-11-17 Fixed
 - Added 'noviewer' class to prevent MediaViewer from hijacking galleries (HSGs)
 - Exposed previously-obscured HSG index label
