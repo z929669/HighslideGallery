@@ -4,12 +4,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [UNRELEASED]
+### Added
+- Optional horizontal thumbnail tiling (justified thumbnails) using `tile=1`
+
+### Changed
+
+
+### Fixed
+
 
 ## [2.0.0] - 2025-12-09
 - All testing for this release was done on MW v1.39.7 and PHP v8.3.26.
 
 ### Added
-- Full expand toggle (fit/1:1) with zoom/pan support; `f` key uses the same toggle path.
+- Full expand toggle (full/fit) with zoom/pan support; `f` key uses the same toggle path.
 - SVG control icons, disabled-state dimming, and configurable `wgHSGControlsPreset` layout.
 - Unified caption spans/classes for images and video (`hsg-caption-gallery/title/caption`), plus optional `nocaption` to suppress thumb captions and improved fallback (`Image` instead of raw path).
 - New ResourceLoader i18n strings for hover instructions, control tooltips, loading text, and member counter.
@@ -76,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ResourceLoader now mediates only config JS and styles
 - Parser hooks modernized
 
-## [UNRELEASED-1.1.1] - 2023-12-11
+## [1.1.1] - 2023-12-11
 ### Changed
 - Bundles Highslide JS (`highslide.js` and `highslide.css`) to ensure compatibility and "just works"
 

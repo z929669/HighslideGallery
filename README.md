@@ -1,6 +1,6 @@
 # HighslideGallery (MediaWiki Extension)
 
-HighslideGallery delivers Highslide JS-powered overlays for images and YouTube videos: thumbnails or inline links, slideshow grouping via `hsgid`, and MediaWiki-style captions inside an interactive overlay.
+HighslideGallery (HSG) delivers Highslide JS-powered overlays/slidewhows for images and YouTube videos displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
 
 > **Status**: actively maintained  
 > **Tested**:  
@@ -17,18 +17,19 @@ HighslideGallery delivers Highslide JS-powered overlays for images and YouTube v
 ---
 
 ## Features (2.0.0)
-- Thumbnails by default; inline links remain opt-in (`inline=1`).
-- Group images and YouTube videos in the same HSG via `hsgid`.
-- Robust list handling (ordered/unordered/description and mixed/multi-level lists).
-- Caption spans/classes for gallery/title/caption; consistent `data-hsg-caption`/`alt` (`title | caption`).
-- Optional `nocaption=1` to hide thumb captions; improved caption fallback (`Image` instead of raw path).
-- Zoom toggle (fit/1:1) with pan; `f` key uses the same toggle; SVG controls with disabled-state dimming.
+- Thumbnails displayed by default at 210px with ability to size as needed, but inline links are optional using `inline=1`
+- Zoom toggle (full/fit) with pan inside the HSG
+- Group images and YouTube videos into a single HSG gallery via `hsgid`.
+- Support for opotional thumbnail layouts including justified tiling and clean arrangement in ordered/unordered lists
+- Robust data model provides unique styling classes, maximizing compatibility with Mediawiki core media-handling and other media extensions.
+- Thumb captions are default but optional with graceful caption fallbacks also used for image `alt` text.
 - ResourceLoader-exposed i18n strings for hover instructions, control tooltips, loading text, and member counter.
+- Custom `LocalSettings.php` parameter allows positioning controls at bottom of viewport (default) or over the image expander (optional) inside the HSG overlay. 
 
 ---
 
 ## Installation
-If you customized `$wgExtensionAssetsPath`, update `hs.graphicsDir` in `modules/highslide.cfg.js` to match your path.
+If `$wgExtensionAssetsPath` is custom, update `hs.graphicsDir` in `modules/highslide.cfg.js` to match this path.
 
 ### Composer (recommended)
 Add to `composer.local.json`:
@@ -85,14 +86,15 @@ Registered hooks:
 
 Parameters (named; positional `source` is also accepted):
 - `source` (required): `File:Title` or external URL (image) / YouTube ID or URL (video).
-- `hsgid`/`id` (optional): slideshow group id; lets images/videos coexist in one overlay set.
-- `width` (optional): max thumb width in px (default 210; applies to thumbs only).
+- `hsgid` (optional): alphanumeric slideshow gallery id; lets images/videos coexist in one overlay set.
+- `width` (optional): max thumb width in px (default 210).
+- `tile` (optional): truthy → enforce horizontal tiling (adds `hsg-tiles-horizontal` to the auto wrapper).
 - `title` (optional): overlay title text.
 - `caption` (optional): overlay caption text.
-- `nocaption` (optional): truthy hides thumb caption (overlay caption still shown).
+- `nocaption` (optional): truthy → hides thumb caption (overlay caption still shown).
 - `inline` (optional): truthy → inline link; falsy/omitted → thumbnail (default).
 - `linktext` (optional): inline link text (inline only).
-- `autoplay` (YouTube only): truthy enables autoplay (muted).
+- `autoplay` (YouTube only): truthy → enables autoplay (muted).
 
 ### Examples using the raw parser functions directly
 - Inline image with custom link text:  
@@ -110,29 +112,35 @@ Parameters (named; positional `source` is also accepted):
 {{#hsgytb:
 | source={{{ytb|}}}
 | hsgid={{{hsgid|}}}
+| tile={{{tile|0}}}
 | width={{{width|}}}
 | title={{{title|}}}
 | caption={{{caption|}}}
-| linktext={{{linktext|}}}
-| inline={{{inline|}}}
-| autoplay={{{autoplay|}}}
 | nocaption={{{nocaption|}}}
+| inline={{{inline|}}}
+| linktext={{{linktext|}}}
+| autoplay={{{autoplay|}}}
 }}
 | <!-- IMAGE BRANCH (default when no ytb) -->
 {{#hsgimg:
 | source={{{img|}}}
 | hsgid={{{hsgid|}}}
+| tile={{{tile|0}}}
 | width={{{width|}}}
 | title={{{title|}}}
 | caption={{{caption|}}}
-| linktext={{{linktext|}}}
-| inline={{{inline|}}}
 | nocaption={{{nocaption|}}}
+| inline={{{inline|}}}
+| linktext={{{linktext|}}}
 }} }}
 </includeonly>
 ```
 
-### Legacy tags (still parsed)
+### Tiling layouts (opt-in)
+- Default thumbs are resizable using custom `width=#px`. To tile responsively, set `tile=1` on thumbs that also declare an `hsgid`; the auto wrapper gets `hsg-tiles-horizontal`. Control sizing with CSS variables, `--hsg-tile-min`  and `--hsg-tile-gap`, in `highslide.override.dcss`.
+- Inline `width=` values on thumbs are otherwise overridden inside the tiling wrappers.
+
+### Legacy tags (still supported)
 - YouTube tag: `<hsyoutube title="Trailer">https://www.youtube.com/watch?v=VIDEO_ID</hsyoutube>` (defaults to inline). Prefer `#hsgytb` for modern usage.
 
 ---

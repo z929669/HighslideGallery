@@ -356,6 +356,16 @@ class HighslideGallery {
 			unset( $attributes['hidecaption'] );
 		}
 
+		$tileFlag = false;
+		foreach ( $attributes as $k => $v ) {
+			$kLower = strtolower( (string)$k );
+			if ( $kLower === 'tile' || $kLower === 'tiles' || $kLower === 'tiling' ) {
+				$tileFlag = self::isTruthy( $v );
+				unset( $attributes[$k] );
+				break;
+			}
+		}
+
 		// -----------------------------------------------------------------
 		// 2. Normalise title / caption / linktext (unescaped)
 		// -----------------------------------------------------------------
@@ -514,6 +524,8 @@ class HighslideGallery {
 			$hsimg .= ' style="max-width: ' . $w . 'px !important; height: auto; width: auto;"';
 		}
 
+		$thumbTileAttr = $tileFlag ? ' data-hsg-tile="1"' : '';
+
 		$s = $hs . $hsimg . ' /></a>';
 
 		// For hsgimg thumbs we keep the original behaviour: no File object/title
@@ -530,7 +542,7 @@ class HighslideGallery {
 			$captionHtml = '<div class="thumbcaption hsg-caption">' . $captionHtmlThumb . '</div>';
 		}
 
-		$s = '<div class="thumb hsg-thumb hsg-thumb-normalized"><div class="thumbinner hsg-thumb"' . $thumbStyle . '>' .
+		$s = '<div class="thumb hsg-thumb hsg-thumb-normalized"' . $thumbTileAttr . '><div class="thumbinner hsg-thumb"' . $thumbStyle . '>' .
 			$s . $captionHtml . '</div></div>';
 
 		return [ $s, 'isHTML' => true ];
@@ -693,6 +705,16 @@ class HighslideGallery {
 			unset( $attributes['hidecaption'] );
 		}
 
+		$tileFlag = false;
+		foreach ( $attributes as $k => $v ) {
+			$kLower = strtolower( (string)$k );
+			if ( $kLower === 'tile' || $kLower === 'tiles' || $kLower === 'tiling' ) {
+				$tileFlag = self::isTruthy( $v );
+				unset( $attributes[$k] );
+				break;
+			}
+		}
+
 		// Build player URL with query flags.
 		$query = [];
 		if ( $autoplayOn ) {
@@ -788,6 +810,7 @@ class HighslideGallery {
 			}
 
 			$innerStyle = $width > 0 ? ' style="width: ' . ( $width + 2 ) . 'px;"' : '';
+			$thumbTileAttr = $tileFlag ? ' data-hsg-tile="1"' : '';
 
 			$anchor = '<a class="highslide link-youtube hsg-ytb-thumb hsg-thumb"';
 			$anchor .= ' title="' . $titleEsc . '"';
@@ -812,7 +835,7 @@ class HighslideGallery {
 					'</div>'
 				: '';
 
-			$s = '<div class="thumb hsg-thumb hsg-thumb-normalized">';
+			$s = '<div class="thumb hsg-thumb hsg-thumb-normalized"' . $thumbTileAttr . '>';
 			$s .= '<div class="thumbinner hsg-thumb"' . $innerStyle . '>';
 			$s .= $anchor . $captionHtmlBlock;
 			$s .= '</div></div>';

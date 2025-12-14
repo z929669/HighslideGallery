@@ -35,6 +35,8 @@
 	--hsg-frame-bg: #000;
 	--hsg-frame-border: #888;
 	--hsg-frame-shadow: rgba(0, 0, 0, 0.9);
+	--hsg-tile-gap: 12px;
+	--hsg-tile-min: 210px;
 	--hsg-ts-border: #ff9012;
 	--hsg-ts-border-hover: #aaa;
 	--hsg-ytb-bg: #000;
@@ -294,11 +296,29 @@
 	align-items: flex-start;
 }
 
-/* Preserve caption content while suppressing any default icon spacing */
-.thumbcaption a.internal.hsg-thumb {
-	display: inline;
-	padding: 0;
-	margin: 0;
+/* Optional tiling layouts (opt-in per wrapper; supports % or px via vars) */
+.hsg-gallery-wrap.hsg-tiles-horizontal,
+.hsg-list-gallery-wrap.hsg-tiles-horizontal {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(var(--hsg-tile-min), 1fr));
+	gap: var(--hsg-tile-gap);
+}
+/* EXPERIMENTAL
+.hsg-gallery-wrap.hsg-tiles-vertical,
+.hsg-list-gallery-wrap.hsg-tiles-vertical {
+	display: grid;
+	grid-auto-flow: row;
+	grid-template-columns: 1fr;
+	gap: var(--hsg-tile-gap, 12px);
+}
+*/
+
+.hsg-tiles-horizontal .thumbinner {
+	width: 100% !important;
+}
+
+.hsg-tiles-horizontal .thumbcaption.hsg-caption {
+	text-align: center;
 }
 
 /* -------------------------------------------------------------------------

@@ -457,6 +457,32 @@ function hsgIsSeparatorNode( node ) {
 	return false;
 }
 
+function hsgRunHasTile( nodes ) {
+	for ( var i = 0; i < nodes.length; i++ ) {
+		var n = nodes[i];
+		if ( !n ) {
+			continue;
+		}
+		if ( n.nodeType === 1 && n.classList && n.classList.contains( 'thumb' ) &&
+			n.getAttribute( 'data-hsg-tile' ) === '1' ) {
+			return true;
+		}
+		if ( n.querySelector && n.querySelector( '.thumb[data-hsg-tile="1"]' ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function hsgApplyTileClassToWrappers( root ) {
+	var scope = root || document;
+	scope.querySelectorAll( '.hsg-gallery-wrap, .hsg-list-gallery-wrap' ).forEach( function ( wrap ) {
+		if ( wrap.querySelector( '.thumb[data-hsg-tile="1"]' ) ) {
+			hsgAddClass( wrap, 'hsg-tiles-horizontal' );
+		}
+	} );
+}
+
 function hsgFixThumbFloat( root ) {
 	var scope = root || document;
 	var anchors = scope.querySelectorAll( '.thumb.tright .hsg-thumb, .thumb.tleft .hsg-thumb' );
@@ -501,7 +527,7 @@ function hsgNormalizeListGalleries( root ) {
 		}
 
 		var wrap = document.createElement( 'div' );
-		wrap.className = 'hsg-list-gallery-wrap';
+		wrap.className = 'hsg-list-gallery-wrap' + ( hsgRunHasTile( directBlocks ) ? ' hsg-tiles-horizontal' : '' );
 		li.insertBefore( wrap, directBlocks[0] );
 
 		directBlocks.forEach( function ( node ) {
@@ -566,14 +592,23 @@ function hsgNormalizeThumbBlocks( root ) {
 		}
 		var nodes = Array.prototype.slice.call( parent.childNodes || [] );
 		var run = [];
+		var wrapRun = function ( collection, beforeNode ) {
+			if ( !collection || collection.length === 0 ) {
+				return;
+			}
+			var hasTile = hsgRunHasTile( collection );
+			if ( collection.length === 1 && !hasTile ) {
+				return;
+			}
+			var wrap = document.createElement( 'div' );
+			wrap.className = 'hsg-gallery-wrap' + ( hasTile ? ' hsg-tiles-horizontal' : '' );
+			parent.insertBefore( wrap, beforeNode || collection[0] );
+			collection.forEach( function ( n ) { wrap.appendChild( n ); } );
+		};
+
 		nodes.forEach( function ( node ) {
 			if ( hsgIsSeparatorNode( node ) ) {
-				if ( run.length > 1 ) {
-					var wrap = document.createElement( 'div' );
-					wrap.className = 'hsg-gallery-wrap';
-					parent.insertBefore( wrap, run[0] );
-					run.forEach( function ( n ) { wrap.appendChild( n ); } );
-				}
+				wrapRun( run, node );
 				run = [];
 				return;
 			}
@@ -582,22 +617,14 @@ function hsgNormalizeThumbBlocks( root ) {
 			} else if ( node.nodeType === 3 && !node.textContent.trim() ) {
 				// ignore whitespace
 			} else {
-				if ( run.length > 1 ) {
-					var wrap2 = document.createElement( 'div' );
-					wrap2.className = 'hsg-gallery-wrap';
-					parent.insertBefore( wrap2, run[0] );
-					run.forEach( function ( n ) { wrap2.appendChild( n ); } );
-				}
+				wrapRun( run, node );
 				run = [];
 			}
 		} );
-		if ( run.length > 1 ) {
-			var wrapFinal = document.createElement( 'div' );
-			wrapFinal.className = 'hsg-gallery-wrap';
-			parent.insertBefore( wrapFinal, run[0] );
-			run.forEach( function ( n ) { wrapFinal.appendChild( n ); } );
-		}
+		wrapRun( run, null );
 	} );
+
+	hsgApplyTileClassToWrappers( scope );
 }
 
 // 2025-12-04 HSG: If a thumb run got wrapped outside a list (e.g. from block HTML in list items),
