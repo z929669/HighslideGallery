@@ -56,6 +56,7 @@ class HighslideGallery {
 
 		// Let ResourceLoader handle highslide.js + cfg + CSS.
 		$out->addModules( 'ext.highslideGallery' );
+		$out->addModuleStyles( 'ext.highslideGallery' );
 	}
 
 	// Parser hooks are non-abortable; return true. Use [self::class, 'method'].

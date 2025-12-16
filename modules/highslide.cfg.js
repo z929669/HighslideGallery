@@ -28,6 +28,8 @@
  * - Any additional helpers or overlays we register here
  */
 
+window.__HSG_BUILD__ = '2025-12-15-prod-tiles-optin'; // Build identifier for debugging
+
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
 	window.hs = window.hs || hs;

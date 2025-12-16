@@ -12,6 +12,7 @@
 	"AutoloadClasses": { "HighslideGallery": "HighslideGallery.body.php" },
 	"ResourceModules": {
 		"ext.highslideGallery": {
+			"version": "2025-12-15.2",
 			"scripts": [ "highslide-full.js", "highslide.cfg.js" ],
 			"styles": [ "highslide.css", "highslide.override.css" ],
 			"dependencies": [ "jquery", "mediawiki.util" ],
