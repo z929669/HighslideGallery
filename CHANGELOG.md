@@ -6,11 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [UNRELEASED]
 ### Added
 - Optional horizontal thumbnail tiling (justified thumbnails) using `tile=1`
+- Cache-busting insurance for ResourceLoader
+- List item markers (`hsg-thumb-list-item`, `hsg-inline-list-item`) applied to list items containing HSG thumbs/inline entries for selective styling
+- Styling for `hsg-thumb-list-item` to remove bottom margin
 
 ### Changed
 
 
 ### Fixed
+- Adjacent lists of the same type are merged to keep numbering/bullets continuous when HSG markup is present
+- List items containing HSG thumbs drop `mw-empty-elt` and gain `hsg-thumb-list-item` for styling without affecting other list items
 
 
 ## [2.0.0] - 2025-12-09

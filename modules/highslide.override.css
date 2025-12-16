@@ -303,15 +303,6 @@
 	grid-template-columns: repeat(auto-fit, minmax(var(--hsg-tile-min), 1fr));
 	gap: var(--hsg-tile-gap);
 }
-/* EXPERIMENTAL
-.hsg-gallery-wrap.hsg-tiles-vertical,
-.hsg-list-gallery-wrap.hsg-tiles-vertical {
-	display: grid;
-	grid-auto-flow: row;
-	grid-template-columns: 1fr;
-	gap: var(--hsg-tile-gap, 12px);
-}
-*/
 
 .hsg-tiles-horizontal .thumbinner {
 	width: 100% !important;
@@ -319,6 +310,10 @@
 
 .hsg-tiles-horizontal .thumbcaption.hsg-caption {
 	text-align: center;
+}
+
+.hsg-thumb-list-item .hsg-thumb-normalized {
+	margin-bottom: 0;
 }
 
 /* -------------------------------------------------------------------------

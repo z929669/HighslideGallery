@@ -28,7 +28,7 @@
  * - Any additional helpers or overlays we register here
  */
 
-window.__HSG_BUILD__ = '2025-12-15-prod-tiles-optin'; // Build identifier for debugging
+window.__HSG_BUILD__ = '2025-12-16.1'; // Build identifier for debugging
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
@@ -506,7 +506,12 @@ function hsgNormalizeListGalleries( root ) {
 	var listItems = scope.querySelectorAll( HSG_LIST_ITEM_SELECTOR );
 
 	listItems.forEach( function ( li ) {
-		if ( li.querySelector( ':scope > .hsg-list-gallery-wrap' ) ) {
+		var existingWrap = li.querySelector( ':scope > .hsg-list-gallery-wrap' );
+		if ( existingWrap ) {
+			if ( li.classList && !li.classList.contains( 'hsg-thumb-list-item' ) ) {
+				li.classList.add( 'hsg-thumb-list-item' );
+				li.classList.remove( 'mw-empty-elt' );
+			}
 			return;
 		}
 
@@ -535,6 +540,15 @@ function hsgNormalizeListGalleries( root ) {
 		directBlocks.forEach( function ( node ) {
 			wrap.appendChild( node );
 		} );
+
+		if ( li.classList ) {
+			if ( li.classList.contains( 'mw-empty-elt' ) ) {
+				li.classList.remove( 'mw-empty-elt' );
+			}
+			if ( !li.classList.contains( 'hsg-thumb-list-item' ) ) {
+				li.classList.add( 'hsg-thumb-list-item' );
+			}
+		}
 	} );
 }
 
@@ -726,9 +740,31 @@ function hsgRelocateWrapsIntoLists( root ) {
 	};
 
 	scope.querySelectorAll( '.hsg-gallery-wrap' ).forEach( function ( wrap ) {
+		var parent = wrap.parentElement;
+		if ( !parent ) {
+			return;
+		}
+
+		// If wrapper sits directly under a list, move into the last item and mark it.
+		if ( parent.tagName === 'OL' || parent.tagName === 'UL' || parent.tagName === 'DL' ) {
+			var lastItem = parent.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+			if ( lastItem ) {
+				lastItem.appendChild( wrap );
+				if ( lastItem.classList ) {
+					lastItem.classList.remove( 'mw-empty-elt' );
+					lastItem.classList.add( 'hsg-thumb-list-item' );
+				}
+				return;
+			}
+		}
+
 		if ( !wrap.parentElement ) return;
 		// Already inside a list item/description item.
 		if ( wrap.parentElement.tagName === 'LI' || wrap.parentElement.tagName === 'DD' ) {
+			if ( wrap.parentElement.classList ) {
+				wrap.parentElement.classList.remove( 'mw-empty-elt' );
+				wrap.parentElement.classList.add( 'hsg-thumb-list-item' );
+			}
 			return;
 		}
 
@@ -742,6 +778,29 @@ function hsgRelocateWrapsIntoLists( root ) {
 		}
 
 		target.appendChild( wrap );
+		if ( target.classList ) {
+			target.classList.remove( 'mw-empty-elt' );
+			target.classList.add( 'hsg-thumb-list-item' );
+		}
+	} );
+}
+
+// Merge immediately adjacent lists of the same type so numbering/bullets continue.
+function hsgMergeAdjacentLists( root ) {
+	var scope = root || document;
+	var lists = scope.querySelectorAll( 'ol, ul' );
+	lists.forEach( function ( list ) {
+		var prev = list.previousElementSibling;
+		if ( !prev ) {
+			return;
+		}
+		if ( prev.tagName !== list.tagName ) {
+			return;
+		}
+		while ( list.firstChild ) {
+			prev.appendChild( list.firstChild );
+		}
+		list.remove();
 	} );
 }
 
@@ -785,6 +844,33 @@ function hsgRelocateInlineIntoLists( root ) {
 		}
 		moveIntoLastItem( prev, p );
 	} );
+
+	// If an inline HSG ended up directly inside a list item after DOM operations,
+	// ensure it stays within the current LI instead of creating a new list.
+	scope.querySelectorAll( '.hsg-inline' ).forEach( function ( inline ) {
+		var li = inline.closest( 'li, dd' );
+		if ( !li ) {
+			return;
+		}
+		if ( li.classList && !li.classList.contains( 'hsg-inline-list-item' ) ) {
+			li.classList.add( 'hsg-inline-list-item' );
+		}
+		var parentList = li.parentElement;
+		if ( !parentList || ( parentList.tagName !== 'OL' && parentList.tagName !== 'UL' && parentList.tagName !== 'DL' ) ) {
+			return;
+		}
+		// If the inline anchor was split into its own list item, merge back into previous sibling if appropriate.
+		var prev = li.previousElementSibling;
+		if ( prev && prev.tagName === li.tagName ) {
+			while ( inline.previousSibling ) {
+				prev.appendChild( inline.previousSibling );
+			}
+			prev.appendChild( inline );
+			if ( li.childNodes.length === 0 ) {
+				li.remove();
+			}
+		}
+	} );
 }
 
 if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
@@ -793,14 +879,25 @@ if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 		hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
 		hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
 		hsgRelocateWrapsIntoLists( $content && $content[0] ? $content[0] : document );
+		hsgMergeAdjacentLists( $content && $content[0] ? $content[0] : document );
 		hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
+		setTimeout( function () {
+			hsgMergeAdjacentLists( $content && $content[0] ? $content[0] : document );
+			hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
+		}, 0 );
 	} );
-} else {
+} 
+else {
 	document.addEventListener( 'DOMContentLoaded', function () {
 		hsgFixThumbFloat( document );
 		hsgNormalizeListGalleries( document );
 		hsgNormalizeThumbBlocks( document );
 		hsgRelocateWrapsIntoLists( document );
+		hsgMergeAdjacentLists( document );
 		hsgRelocateInlineIntoLists( document );
+		setTimeout( function () {
+			hsgMergeAdjacentLists( document );
+			hsgRelocateInlineIntoLists( document );
+		}, 0 );
 	} );
 }
