@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Adjacent lists of the same type are merged to keep numbering/bullets continuous when HSG markup is present
 - List items containing HSG thumbs drop `mw-empty-elt` and gain `hsg-thumb-list-item` for styling without affecting other list items
+- Orphan thumbs now select the deepest nearby list item (up to 3 levels of mixed ol/ul/dl nesting) while keeping numbering intact
 
 
 ## [2.0.0] - 2025-12-09

@@ -28,7 +28,7 @@
  * - Any additional helpers or overlays we register here
  */
 
-window.__HSG_BUILD__ = '2025-12-16.1'; // Build identifier for debugging
+window.__HSG_BUILD__ = '2025-12-16.2'; // Build identifier for debugging
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
@@ -804,6 +804,70 @@ function hsgMergeAdjacentLists( root ) {
 	} );
 }
 
+// Move orphan HSG thumbs (not inside list items) into the adjacent list item when clearly adjacent to a list.
+function hsgRelocateThumbsIntoLists( root ) {
+	var scope = root || document;
+
+	var nearestPrevElement = function ( node ) {
+		var prev = node.previousSibling;
+		while ( prev ) {
+			if ( prev.nodeType === 1 ) {
+				return prev;
+			}
+			if ( prev.nodeType === 3 && prev.textContent && prev.textContent.trim() ) {
+				return null; // non-whitespace text -> stop
+			}
+			prev = prev.previousSibling;
+		}
+		return null;
+	};
+
+	var findDeepestListItem = function ( list, depth ) {
+		if ( !list || depth < 0 ) {
+			return null;
+		}
+		var item = null;
+		if ( list.tagName === 'DL' ) {
+			item = list.querySelector( ':scope > dd:last-of-type' );
+		} else {
+			item = list.querySelector( ':scope > li:last-of-type' );
+		}
+		if ( !item ) {
+			return null;
+		}
+		if ( depth === 0 ) {
+			return item;
+		}
+		var nested = item.querySelector( ':scope > ol:last-of-type, :scope > ul:last-of-type, :scope > dl:last-of-type' );
+		return nested ? ( findDeepestListItem( nested, depth - 1 ) || item ) : item;
+	};
+
+	scope.querySelectorAll( '.thumb.hsg-thumb' ).forEach( function ( thumb ) {
+		if ( thumb.closest( 'li, dd' ) ) {
+			return;
+		}
+		var prevEl = nearestPrevElement( thumb );
+		var target = null;
+		if ( prevEl && ( prevEl.tagName === 'LI' || prevEl.tagName === 'DD' ) ) {
+			// Prefer nested DL within this item if present; depth limit 2.
+			var nestedList = prevEl.querySelector( ':scope > dl:last-of-type, :scope > ol:last-of-type, :scope > ul:last-of-type' );
+			target = nestedList ? ( findDeepestListItem( nestedList, 2 ) || prevEl ) : prevEl;
+		} else if ( prevEl && ( prevEl.tagName === 'OL' || prevEl.tagName === 'UL' || prevEl.tagName === 'DL' ) ) {
+			target = findDeepestListItem( prevEl, 3 );
+		}
+		if ( !target ) {
+			return;
+		}
+		target.appendChild( thumb );
+		if ( target.classList ) {
+			target.classList.remove( 'mw-empty-elt' );
+			if ( !target.classList.contains( 'hsg-thumb-list-item' ) ) {
+				target.classList.add( 'hsg-thumb-list-item' );
+			}
+		}
+	} );
+}
+
 // 2025-12-08 HSG: If an inline HSG ended up in a paragraph right after a list item,
 // move that paragraph's contents back into the last list item to keep bullets with the inline HSG.
 function hsgRelocateInlineIntoLists( root ) {
@@ -879,9 +943,11 @@ if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 		hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
 		hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
 		hsgRelocateWrapsIntoLists( $content && $content[0] ? $content[0] : document );
+		hsgRelocateThumbsIntoLists( $content && $content[0] ? $content[0] : document );
 		hsgMergeAdjacentLists( $content && $content[0] ? $content[0] : document );
 		hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
 		setTimeout( function () {
+			hsgRelocateThumbsIntoLists( $content && $content[0] ? $content[0] : document );
 			hsgMergeAdjacentLists( $content && $content[0] ? $content[0] : document );
 			hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
 		}, 0 );
@@ -893,9 +959,11 @@ else {
 		hsgNormalizeListGalleries( document );
 		hsgNormalizeThumbBlocks( document );
 		hsgRelocateWrapsIntoLists( document );
+		hsgRelocateThumbsIntoLists( document );
 		hsgMergeAdjacentLists( document );
 		hsgRelocateInlineIntoLists( document );
 		setTimeout( function () {
+			hsgRelocateThumbsIntoLists( document );
 			hsgMergeAdjacentLists( document );
 			hsgRelocateInlineIntoLists( document );
 		}, 0 );
