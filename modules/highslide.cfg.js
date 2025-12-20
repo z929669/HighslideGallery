@@ -28,7 +28,7 @@
  * - Any additional helpers or overlays we register here
  */
 
-window.__HSG_BUILD__ = '2025-12-16.2'; // Build identifier for debugging
+window.__HSG_BUILD__ = '2025-12-16.6'; // Build identifier for debugging
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
@@ -83,6 +83,94 @@ hs.closeOnClick			= false;
 hs.numberPosition		= 'caption';
 hs.lang.number			= 'Member %1 of %2';
 
+// Basic coarse-pointer detection for touch support
+var HSG_IS_COARSE_POINTER = ( function () {
+	if ( typeof window === 'undefined' ) {
+		return false;
+	}
+	if ( window.matchMedia ) {
+		try {
+			if ( window.matchMedia( '(pointer: coarse)' ).matches ) {
+				return true;
+			}
+		} catch ( e ) {}
+	}
+	return 'ontouchstart' in window;
+}() );
+
+// Map single-finger touch drag to Highslide's mouse drag (move or pan when zoomed)
+function hsgAttachTouchPan( exp ) {
+	if ( !HSG_IS_COARSE_POINTER || !exp || exp._hsgTouchPanAttached ) {
+		return;
+	}
+	var el = exp.content || exp.wrapper;
+	if ( !el ) {
+		return;
+	}
+
+	var sendMouse = function ( type, touch, target ) {
+		var evt = new MouseEvent( type, {
+			bubbles: true,
+			cancelable: true,
+			clientX: touch.clientX,
+			clientY: touch.clientY,
+			screenX: touch.screenX,
+			screenY: touch.screenY,
+			button: 0
+		} );
+		( target || el ).dispatchEvent( evt );
+	};
+
+	var touchId = null;
+	var move, end;
+	var start = function ( e ) {
+		if ( !e.touches || e.touches.length !== 1 || !e.touches[0] ) {
+			return;
+		}
+		e.preventDefault();
+		touchId = e.touches[0].identifier;
+		sendMouse( 'mousedown', e.touches[0], el );
+		move = function ( ev ) {
+			if ( !ev.touches || ev.touches.length === 0 ) {
+				return;
+			}
+			for ( var i = 0; i < ev.touches.length; i++ ) {
+				var t = ev.touches[i];
+				if ( t && t.identifier === touchId ) {
+					ev.preventDefault();
+					sendMouse( 'mousemove', t, document );
+					return;
+				}
+			}
+		};
+		end = function ( evEnd ) {
+			var t2 = null;
+			if ( evEnd.changedTouches && evEnd.changedTouches.length ) {
+				for ( var j = 0; j < evEnd.changedTouches.length; j++ ) {
+					if ( evEnd.changedTouches[j].identifier === touchId ) {
+						t2 = evEnd.changedTouches[j];
+						break;
+					}
+				}
+			}
+			if ( t2 ) {
+				sendMouse( 'mouseup', t2, document );
+			}
+			document.removeEventListener( 'touchmove', move );
+			document.removeEventListener( 'touchend', end );
+			document.removeEventListener( 'touchcancel', end );
+			touchId = null;
+		};
+
+		document.addEventListener( 'touchmove', move, { passive: false } );
+		document.addEventListener( 'touchend', end );
+		document.addEventListener( 'touchcancel', end );
+	};
+
+	el.addEventListener( 'touchstart', start, { passive: true } );
+	exp._hsgTouchPanAttached = true;
+}
+
 // Cancel Highslide's default "click image to close".
 if ( hs.Expander && hs.Expander.prototype ) {
 	hs.Expander.prototype.onImageClick = function () {
@@ -108,6 +196,7 @@ if ( hs.Expander && hs.Expander.prototype ) {
 				if ( typeof this.slideshow.updateZoomLabel === 'function' ) {
 					this.slideshow.updateZoomLabel( !!this._hsgZoomed );
 				}
+				hsgAttachTouchPan( this );
 			} else {
 				this.slideshow.disable( 'full-expand' );
 				if ( typeof this.slideshow.updateZoomLabel === 'function' ) {

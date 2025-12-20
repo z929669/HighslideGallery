@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cache-busting insurance for ResourceLoader
 - List item markers (`hsg-thumb-list-item`, `hsg-inline-list-item`) applied to list items containing HSG thumbs/inline entries for selective styling
 - Styling for `hsg-thumb-list-item` to remove bottom margin
+- Touch support: drag-to-pan bridge on coarse pointers, larger tap targets, and close button pinned to viewport top-right
 
 ### Changed
 

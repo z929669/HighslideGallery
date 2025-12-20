@@ -43,9 +43,19 @@
 }
 
 /* -------------------------------------------------------------------------
+ * Touch (coarse pointers)
+ * ------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+	.highslide,
+	.highslide-wrapper,
+	.highslide-image {
+		touch-action: none;
+	}
+}
+
+/* -------------------------------------------------------------------------
  * Frame & caption
  * ------------------------------------------------------------------------- */
-
 /* Base frame used by HSG (images & YouTube) */
 .highslide-wrapper.hsg-frame {
 	left: 50% !important;
@@ -117,11 +127,11 @@
 	border: none;
 }
 
-/* Close control is visible and above the skin UI */
+/* Close control: pin to viewport top-right for all browsers */
 .controls.close {
 	position: fixed;
-	top: 20px;
-	right: 20px;
+	top: 12px;
+	right: 12px;
 	z-index: 99999;
 	opacity: 0.75;
 }
