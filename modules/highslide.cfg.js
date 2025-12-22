@@ -28,7 +28,7 @@
  * - Any additional helpers or overlays we register here
  */
 
-window.__HSG_BUILD__ = '2025-12-16.6'; // Build identifier for debugging
+window.__HSG_BUILD__ = '2025-12-21.1'; // Build identifier for debugging
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
@@ -205,6 +205,46 @@ if ( hs.Expander && hs.Expander.prototype ) {
 			}
 		};
 	}
+}
+
+// (viewport/dimmer sizing remains default Highslide behavior)
+
+// -------------------------------------------------------------------------
+// Minimal viewport-relative overlay alignment (horizontal only)
+// -------------------------------------------------------------------------
+if ( hs.Expander && hs.Expander.prototype && !hs.Expander.prototype._hsgPatchedOverlayCenter ) {
+	hs.Expander.prototype._hsgPatchedOverlayCenter = true;
+	var _hsgOrigPositionOverlay = hs.Expander.prototype.positionOverlay;
+	hs.Expander.prototype.positionOverlay = function ( overlay ) {
+		if ( _hsgOrigPositionOverlay ) {
+			_hsgOrigPositionOverlay.call( this, overlay );
+		}
+		if ( !overlay || overlay.relativeTo !== 'viewport' ) {
+			return;
+		}
+		var vv = window.visualViewport;
+		if ( !vv ) {
+			return;
+		}
+		var pos = overlay.position || '';
+		var offX = overlay.offsetX || 0;
+
+		if ( /center$/.test( pos ) ) {
+			var leftPx = vv.pageLeft + ( vv.width - overlay.offsetWidth ) / 2 + offX;
+			overlay.style.left = leftPx + 'px';
+			overlay.style.right = 'auto';
+			overlay.style.marginLeft = '0';
+		} else if ( /right$/.test( pos ) ) {
+			var leftRight = vv.pageLeft + vv.width - overlay.offsetWidth - offX;
+			overlay.style.left = leftRight + 'px';
+			overlay.style.right = 'auto';
+			overlay.style.marginLeft = '0';
+		} else if ( /left$/.test( pos ) ) {
+			overlay.style.left = ( vv.pageLeft + offX ) + 'px';
+			overlay.style.right = 'auto';
+			overlay.style.marginLeft = '0';
+		}
+	};
 }
 
 // -------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # HighslideGallery (MediaWiki Extension)
 
-HighslideGallery (HSG) delivers Highslide JS-powered overlays/slidewhows for images and YouTube videos displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
+HighslideGallery (HSG) delivers Highslide JS-powered overlays/slideshows for images and YouTube videos displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
 
 > **Status**: actively maintained  
 > **Tested**:  
