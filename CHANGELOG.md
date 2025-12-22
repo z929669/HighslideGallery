@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - List item markers (`hsg-thumb-list-item`, `hsg-inline-list-item`) applied to list items containing HSG thumbs/inline entries for selective styling
 - Styling for `hsg-thumb-list-item` to remove bottom margin
 - Touch support: drag-to-pan bridge on coarse pointers, larger tap targets, and close button pinned to viewport top-right
-- Overlay alignment uses the visual viewport for viewport-relative overlays (controls/thumbstrip) to avoid page-centered drift on mobile
+- Overlay alignment fixes: controls/thumbstrip forced to viewport bottom center for consistent mobile positioning
 
 ### Changed
-
+- Removes redundant override styling obfuscating some core styling and JS knobs
+- QOL improvements to PHP
 
 ### Fixed
 - Adjacent lists of the same type are merged to keep numbering/bullets continuous when HSG markup is present

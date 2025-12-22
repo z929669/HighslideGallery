@@ -127,11 +127,11 @@
 	border: none;
 }
 
-/* Close control: pin to viewport top-right for all browsers */
+/* Close control: relative to viewport top-right for all browsers */
 .controls.close {
-	position: fixed;
-	top: 12px;
-	right: 12px;
+	position: relative;
+	top: 60px;
+	right: 30px;
 	z-index: 99999;
 	opacity: 0.75;
 }
@@ -167,20 +167,23 @@
 
 /* Icon-only controls using shipped SVGs */
 .highslide-viewport .highslide-thumbstrip-horizontal table {
-	margin-left: 0;
+	margin: 28px 0;
 }
 
 .text-controls li {
-	margin-left: 5px;
+	margin-left: 10px;
+}
+
+.text-controls li.highslide-previous {
+	margin-left: 0;
+}
+
+.text-controls .highslide-next {
+	margin-right: 0.5em;
 }
 
 .text-controls .highslide-controls {
-	display: flex;
-	gap: 6px;
-	align-items: center;
-	margin: 0 0 0 -2px;
-	padding: 0;
-	background: none;
+	width: fit-content;
 }
 
 .text-controls .highslide-controls li {

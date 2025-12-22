@@ -1,7 +1,10 @@
 /**
 * @file: highslide.css 
-* @version: 5.0.0
+* @version: 5.1.0
 */
+
+/* COMMENTED LINE 610: Styles for text based controls */
+
 .highslide-container div {
 	font-family: Verdana, Helvetica;
 	font-size: 10pt;
@@ -39,7 +42,6 @@
 .glossy-dark {
 	background: #111;
 }
-
 .highslide-image-blur {
 }
 .highslide-number {
@@ -605,7 +607,7 @@ html>/**/body .highslide-gallery ul img {
 
 .text-controls .highslide-controls {
 	width: auto;
-	height: auto;
+/*	height: auto; */
 	margin: 0;
 	text-align: center;
 	background: none;

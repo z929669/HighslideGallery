@@ -517,17 +517,17 @@ class HighslideGallery {
 			self::$hsgLabel = null;
 		}
 
-		$hs = '<a href="' . $hrefEsc . '" class="image highslide-link" title="' . $captionEsc . '">';
-		$hsimg = '<img class="hsimg" src="' . $hrefEsc . '" alt="' . $captionEsc . '"';
+		$hsg = '<a href="' . $hrefEsc . '" class="image highslide-link" title="' . $captionEsc . '">';
+		$hsgimg = '<img class="hsgimg" src="' . $hrefEsc . '" alt="' . $captionEsc . '"';
 
 		$w = (int)$width;
 		if ( $w > 0 ) {
-			$hsimg .= ' style="max-width: ' . $w . 'px !important; height: auto; width: auto;"';
+			$hsgimg .= ' style="max-width: ' . $w . 'px !important; height: auto; width: auto;"';
 		}
 
 		$thumbTileAttr = $tileFlag ? ' data-hsg-tile="1"' : '';
 
-		$s = $hs . $hsimg . ' /></a>';
+		$s = $hsg . $hsgimg . ' /></a>';
 
 		// For hsgimg thumbs we keep the original behaviour: no File object/title
 		// is passed into AddHighslide (only MakeImageLink does that).
@@ -822,7 +822,7 @@ class HighslideGallery {
 				$anchor .= $dataGroup;
 			}
 			$anchor .= '>';
-			$anchor .= '<img class="hsimg hsg-ytb-thumb-img" src="' .
+			$anchor .= '<img class="hsgimg hsg-ytb-thumb-img" src="' .
 				htmlspecialchars( $thumbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
 				'" alt="' . $captionPlainEsc . '"' . $style . ' />';
 			$anchor .= '</a>';

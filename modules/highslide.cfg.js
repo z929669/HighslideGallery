@@ -28,7 +28,7 @@
  * - Any additional helpers or overlays we register here
  */
 
-window.__HSG_BUILD__ = '2025-12-21.1'; // Build identifier for debugging
+window.__HSG_BUILD__ = '2025-12-22.1'; // Build identifier for debugging
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
@@ -47,10 +47,10 @@ hs.dimmingOpacity		= 0.75;
 hs.outlineType			= null; // CSS-driven frame
 // HSG-specific wrapper class; `floating-caption` is vendor CSS.
 hs.wrapperClassName		= 'hsg-frame floating-caption';
-hs.marginTop			= 60;
-hs.marginBottom			= 60;
-hs.marginLeft			= 60;
-hs.marginRight			= 60;
+hs.marginTop			= 40;
+hs.marginBottom			= 40;
+hs.marginLeft			= 30;
+hs.marginRight			= 30;
 
 /* No fades / transitions - snap in/out */
 hs.fadeInOut			= false;
@@ -206,8 +206,6 @@ if ( hs.Expander && hs.Expander.prototype ) {
 		};
 	}
 }
-
-// (viewport/dimmer sizing remains default Highslide behavior)
 
 // -------------------------------------------------------------------------
 // Minimal viewport-relative overlay alignment (horizontal only)
