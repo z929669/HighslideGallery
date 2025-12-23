@@ -6,20 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [UNRELEASED]
 ### Added
 - Optional horizontal thumbnail tiling (justified thumbnails) using `tile=1`
-- Cache-busting insurance for ResourceLoader
 - List item markers (`hsg-thumb-list-item`, `hsg-inline-list-item`) applied to list items containing HSG thumbs/inline entries for selective styling
 - Styling for `hsg-thumb-list-item` to remove bottom margin
+- Markers corresponding to `wgHSGControlsPreset` for independent styling of the thumbstrip/controls presets
 - Touch support: drag-to-pan bridge on coarse pointers, larger tap targets, and close button pinned to viewport top-right
-- Overlay alignment fixes: controls/thumbstrip forced to viewport bottom center for consistent mobile positioning
+- Controls/thumbstrip forced to viewport bottom center for consistent mobile positioning
+- `data-hsg-html` attribute for optional overlay HTML fragments (paired with `data-hsg-caption` plain-text)
+- Stronger id generation with secure fallback (`generateId()`), replacing direct `random_bytes()` use
+- ResourceLoader versioning for cache-busting on update
 
 ### Changed
-- Removes redundant override styling obfuscating some core styling and JS knobs
+- Removed redundant override styling obfuscating some core styling and JS knobs
 - QOL improvements to PHP
+- Consolidated attribute escaping via `escAttr()` for consistent HTML attribute handling
+- Refactored inline/thumbnail parsing and group-id extraction into helpers for maintainability (`parseInlineMode`, `extractGroupId`, `buildDataAttributes`, `makeCaptionSpan`)
 
 ### Fixed
 - Adjacent lists of the same type are merged to keep numbering/bullets continuous when HSG markup is present
 - List items containing HSG thumbs drop `mw-empty-elt` and gain `hsg-thumb-list-item` for styling without affecting other list items
 - Orphan thumbs now select the deepest nearby list item (up to 3 levels of mixed ol/ul/dl nesting) while keeping numbering intact
+- Caption fallback HTML now wrapped in caption spans for consistent overlay styling
+- Defensive DOM extension check to avoid fatal errors when `ext-dom` is unavailable (graceful fallback)
 
 
 ## [2.0.0] - 2025-12-09

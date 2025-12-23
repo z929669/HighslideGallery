@@ -1,5 +1,9 @@
 /*
- * HighslideGallery adds highslide-style image/galleries and YouTube overlays to MediaWiki pages.
+ * HighslideGallery (HSG) delivers Highslide JS-powered overlays/slideshows for images and YouTube videos
+ * displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail
+ * or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to
+ * expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
+ * 
  * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -28,7 +32,7 @@
  * - Any additional helpers or overlays we register here
  */
 
-window.__HSG_BUILD__ = '2025-12-22.1'; // Build identifier for debugging
+window.__HSG_BUILD__ = '20251222.4'; // Build identifier for debugging
 
 // Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
@@ -42,31 +46,29 @@ if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
 hs.graphicsDir = mw.config.get( 'wgExtensionAssetsPath' ) +
 	'/HighslideGallery/modules/graphics/';
 
+hs.showCredits			= false;
+
 hs.align				= 'center';
 hs.dimmingOpacity		= 0.75;
 hs.outlineType			= null; // CSS-driven frame
 // HSG-specific wrapper class; `floating-caption` is vendor CSS.
 hs.wrapperClassName		= 'hsg-frame floating-caption';
+
 hs.marginTop			= 40;
 hs.marginBottom			= 40;
 hs.marginLeft			= 30;
 hs.marginRight			= 30;
 
-/* No fades / transitions - snap in/out */
-hs.fadeInOut			= false;
-hs.expandDuration		= 0;
-hs.restoreDuration		= 0;
-hs.transitions			= [];
+/* Transitions (image, caption, and thumbstrip/controls) default to image zoom in/out on open/close AND
+ * gallery navigation with fade in/out of caption and thumbstrip/controls during gallery navigation. Comment
+ * all of the following for the default.
+ */
+//hs.transitions		= [ 'expand', 'crossfade' ]; // overlay zoom in/out on open/close only; 'crossfade' image transition; caption fade; thumbstrip/controls static
+hs.transitions			= [ 'fade', 'crossfade' ]; // overlay fade in/out on open/close only; 'crossfade' image transition; caption fade; thumbstrip/controls static
+hs.transitionDuration	= 0; // Default: 250; duration of ANY enabled transitions/animations of images, captions, or overlay
+//hs.expandDuration		= 0; // Default: 250; duration of image transitions zoom in/out
+//hs.restoreDuration	= 0; // Default: 250; duration of zoom out on closing the overlay
 
-/* Alternative: fades / transitions (kept as a commented preset) */
-//hs.fadeInOut			= true;
-//hs.expandDuration		= 0;
-//hs.restoreDuration	= 0;
-//hs.transitions		= [ 'expand', 'crossfade' ];
-
-hs.allowSizeReduction	= true;
-hs.showCredits			= false;
-hs.outlineWhileAnimating= true;
 
 // 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
 hs.fullExpandToggle = true;
@@ -82,6 +84,41 @@ hs.closeOnClick			= false;
 // Show image index in the caption area (vendor feature, configured here).
 hs.numberPosition		= 'caption';
 hs.lang.number			= 'Member %1 of %2';
+
+// Add controls preset as a sanitized class so CSS can target layout presets.
+// e.g. wgHSGControlsPreset === 'stacked-top' -> hsg-preset-stacked-top
+var HSG_CONTROLS_PRESET = ( typeof mw !== 'undefined' && typeof mw.config !== 'undefined' && typeof mw.config.get === 'function' )
+	? ( mw.config.get( 'wgHSGControlsPreset' ) || 'classic' )
+	: 'classic';
+HSG_CONTROLS_PRESET = String( HSG_CONTROLS_PRESET ).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+var HSG_PRESET_CLASS = 'hsg-preset-' + HSG_CONTROLS_PRESET;
+if ( typeof hs.wrapperClassName === 'string' ) {
+	hs.wrapperClassName = hs.wrapperClassName + ' ' + HSG_PRESET_CLASS;
+} else {
+	hs.wrapperClassName = 'hsg-frame floating-caption ' + HSG_PRESET_CLASS;
+}
+// Ensure any Highslide-created viewport containers also get the preset class.
+if ( typeof MutationObserver !== 'undefined' ) {
+	(function () {
+		var mo = new MutationObserver( function ( mutations ) {
+			mutations.forEach( function ( m ) {
+				m.addedNodes && m.addedNodes.forEach && m.addedNodes.forEach( function ( node ) {
+					if ( node && node.nodeType === 1 ) {
+						if ( node.classList && node.classList.contains( 'highslide-viewport' ) ) {
+							node.classList.add( HSG_PRESET_CLASS );
+						}
+						// Also catch wrapper elements created under the viewport
+						var viewports = node.querySelectorAll && node.querySelectorAll( '.highslide-viewport' );
+						if ( viewports && viewports.length ) {
+							Array.prototype.forEach.call( viewports, function ( vp ) { vp.classList.add( HSG_PRESET_CLASS ); } );
+						}
+					}
+				} );
+			} );
+		} );
+		mo.observe( document.documentElement || document.body, { childList: true, subtree: true } );
+	}() );
+}
 
 // Basic coarse-pointer detection for touch support
 var HSG_IS_COARSE_POINTER = ( function () {
@@ -207,6 +244,9 @@ if ( hs.Expander && hs.Expander.prototype ) {
 	}
 }
 
+// (Reverted) No override: restore vendor animation behavior so we can reproduce
+// the original thumbstrip/controls behavior when `hs.transitions` is set.
+
 // -------------------------------------------------------------------------
 // Minimal viewport-relative overlay alignment (horizontal only)
 // -------------------------------------------------------------------------
@@ -316,19 +356,19 @@ var hsgControlLayoutPresets = {
 			className: 'text-controls',
 			position: 'top center',
 			relativeTo: 'expander',
-			offsetY: -27
+			offsetY: -36
 		},
 		thumbstrip: {
 			position: 'top center',
 			mode: 'horizontal',
 			relativeTo: 'expander',
-			offsetY: -102
+			offsetY: -111
 		}
 	}
 };
 
 function hsgSelectControlLayoutPreset() {
-	var presetName = 'classic';
+	var presetName = HSG_CONTROLS_PRESET || 'classic';
 
 	if ( typeof mw !== 'undefined' && mw.config && typeof mw.config.get === 'function' ) {
 		var cfgPreset = mw.config.get( 'wgHSGControlsPreset' );
@@ -493,7 +533,7 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 		}
 	}
 
-	var caption = anchor.getAttribute( 'data-hsg-caption' ) || anchor.getAttribute( 'title' );
+	var caption = anchor.getAttribute( 'data-hsg-html' ) || anchor.getAttribute( 'data-hsg-caption' ) || anchor.getAttribute( 'title' );
 	if ( caption ) {
 		opts.captionText = caption;
 	}

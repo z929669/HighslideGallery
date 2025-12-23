@@ -1,6 +1,10 @@
 <?php
 /*
- * HighslideGallery adds simple highslide-style image/galleries and YouTube popups to MediaWiki pages.
+ * HighslideGallery (HSG) delivers Highslide JS-powered overlays/slideshows for images and YouTube videos
+ * displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail
+ * or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to
+ * expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
+ * 
  * @Copyright (C) 2012  Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
