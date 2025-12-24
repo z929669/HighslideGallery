@@ -24,19 +24,16 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 }
 
 class HighslideGallery {
-	// HSG-owned gallery/group identity
-	private static $hsgId; // current slideshow group id
+	private static $hsgId; # slideshow group id
 	private static $isHsgGroupMember = false;
-	private static $hsgLabel; // optional display label, derived from hsgid
-	private static $lastHsgGroupId; // last slideshow group rendered on this page
-	// Canonical default thumb width for ALL HSG thumbs (images + YT) when width is unset.
-	private const DEFAULT_THUMB_WIDTH = 210;
-	// Magic numbers for proxy thumbnail positioning (used to hide off-screen proxy thumbs)
-	private const PROXY_THUMB_OFF_SCREEN_PX = -9999;
+	private static $hsgLabel; # optional display label, derived from hsgid
+	private static $lastHsgGroupId; # last slideshow group rendered on this page
+	private const DEFAULT_THUMB_WIDTH = 210; # Default thumb width
+	private const PROXY_THUMB_OFF_SCREEN_PX = -9999; # Magic numbers used to hide off-screen proxy thumbs
 	private const PROXY_THUMB_SIZE_PX = 1;
 
 	private static function getControlsPreset(): string {
-		// Prefer explicit global override (LocalSettings.php).
+		# Prefer explicit global override (LocalSettings.php).
 		if ( isset( $GLOBALS['wgHSGControlsPreset'] ) && is_string( $GLOBALS['wgHSGControlsPreset'] ) ) {
 			$val = trim( $GLOBALS['wgHSGControlsPreset'] );
 			if ( $val !== '' ) {
@@ -44,50 +41,44 @@ class HighslideGallery {
 			}
 		}
 
-		// Fall back to registered config (extension.json default is "classic").
+		# Fall back to registered config (extension.json default is "classic").
 		$config = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig();
 		$val = $config->get( 'wgHSGControlsPreset' );
 		return is_string( $val ) ? $val : 'classic';
 	}
 
 	public static function AddResources( OutputPage &$out, Skin &$skin ): void {
-		// Reset per-page state
+		# Reset per-page state
 		self::$hsgId = null;
 		self::$isHsgGroupMember = false;
 		self::$hsgLabel = null;
 		self::$lastHsgGroupId = null;
 
-		// Push the controls preset to mw.config on every page view.
+		# Push the controls preset to mw.config on every page view.
 		$preset = self::getControlsPreset();
 		$out->addJsConfigVars( 'wgHSGControlsPreset', $preset );
 
-		// Let ResourceLoader handle highslide.js + cfg + CSS.
+		# Let ResourceLoader handle highslide.js + cfg + CSS.
 		$out->addModules( 'ext.highslideGallery' );
 		$out->addModuleStyles( 'ext.highslideGallery' );
 	}
 
-	// Parser hooks are non-abortable; return true. Use [self::class, 'method'].
+	/*
+	 * Parser hooks are non-abortable; return true. Use [self::class, 'method']
+	 */
 	public static function AddHooks( Parser $parser ): bool {
-		// -----------------------------------------------------------------
-		// Tags
-		// -----------------------------------------------------------------
-		// Legacy tag - kept for backward compatibility
-		$parser->setHook( 'hsyoutube', [ self::class, 'onTagHsYouTube' ] );
-
-		// Canonical HSG tag for YouTube (ytb = all things YouTube)
-		$parser->setHook( 'hsgytb', [ self::class, 'onTagHsgYtb' ] );
-
-		// -----------------------------------------------------------------
-		// Parser functions
-		// -----------------------------------------------------------------
+		/* Tags */
+		$parser->setHook( 'hsyoutube', [ self::class, 'onTagHsYouTube' ] ); # Legacy YouTube tag
+		$parser->setHook( 'hsgytb', [ self::class, 'onTagHsgYtb' ] ); # Canonical YouTube tag
+		/* Parser functions */
 		$parser->setFunctionHook( 'hsgimg', [ self::class, 'onFunctionHsgImg' ] );
 		$parser->setFunctionHook( 'hsgytb', [ self::class, 'onFunctionHsgYtb' ] );
 
 		return true;
 	}
 
-	/**
-	 * Tag <hsyoutube>…</hsyoutube> (legacy).
+	/*
+	 * Tag <hsyoutube>…</hsyoutube> (legacy)
 	 */
 	public static function onTagHsYouTube(
 		$source,
@@ -98,8 +89,8 @@ class HighslideGallery {
 		return self::renderYouTubeHtml( $source, $attributes, $parser, $frame, false );
 	}
 
-	/**
-	 * Tag <hsgytb>…</hsgytb> (canonical).
+	/*
+	 *Tag <hsgytb>…</hsgytb> (canonical)
 	 */
 	public static function onTagHsgYtb(
 		$source,
@@ -110,8 +101,8 @@ class HighslideGallery {
 		return self::renderYouTubeHtml( $source, $attributes, $parser, $frame, false );
 	}
 
-	/**
-	 * Expose selected config values to the client via mw.config.
+	/*
+	 *Expose selected config values to the client via mw.config
 	 */
 	public static function onResourceLoaderGetConfigVars(
 		array &$vars,
@@ -123,11 +114,10 @@ class HighslideGallery {
 		return true;
 	}
 
-	// =====================================================================
-	// Parser function plumbing
-	// =====================================================================
-
-	/*
+	/* =====================================================================
+	 * Parser function plumbing
+	 * =====================================================================
+	 *
 	 * Generic parser for parser function arguments.
 	 *
 	 * Pattern:
@@ -167,11 +157,9 @@ class HighslideGallery {
 				continue;
 			}
 
-			// No '=' in this param
 			if ( $primary === null ) {
 				$primary = $raw;
 			} else {
-				// Bare flag (e.g. "autoplay")
 				$attributes[$raw] = true;
 			}
 		}
@@ -183,8 +171,7 @@ class HighslideGallery {
 		return [ $primary ?? '', $attributes ];
 	}
 
-	/**
-	 * Interpret common truthy values for flag attributes.
+	/* Interpret common truthy values for flag attributes.
 	 *
 	 * @param mixed $val
 	 */
@@ -201,15 +188,15 @@ class HighslideGallery {
 		return in_array( $normalized, [ '1', 'true', 'yes', 'y' ], true );
 	}
 
-	/**
-	 * Escape a string for use in HTML attributes consistently.
+	/* 
+	 * Escape a string for use in HTML attributes consistently 
 	 */
 	private static function escAttr( $val ): string {
 		return htmlspecialchars( (string)$val, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 	}
 
-	/**
-	 * Generate a cryptographically-secure id segment, with safe fallbacks.
+	/* 
+	 * Generate a cryptographically-secure id segment, with safe fallbacks
 	 */
 	private static function generateId( int $bytes = 8 ): string {
 		try {
@@ -220,14 +207,13 @@ class HighslideGallery {
 					return bin2hex( openssl_random_pseudo_bytes( $bytes ) );
 				}
 			} catch ( \Throwable $e2 ) { }
-			// Last resort: deterministic but unlikely collision for modest usage.
+			# Last resort: deterministic but unlikely collision for modest usage
 			return substr( hash( 'sha256', uniqid( (string)microtime( true ), true ) ), 0, $bytes * 2 );
 		}
 	}
 
-	/**
-	 * REFACTOR HELPER: Parse inline mode flag from user input.
-	 * Returns true for yes/1/true, false for no/0/false, null to keep default.
+	/* REFACTOR HELPER: Parse inline mode flag from user input
+	 * Returns true for yes/1/true, false for no/0/false, null to keep default
 	 *
 	 * @param mixed $val Input value to parse
 	 * @return ?bool true=inline, false=thumbnail, null=use default
@@ -238,7 +224,7 @@ class HighslideGallery {
 		}
 
 		if ( $val === '' || $val === null ) {
-			return null; // Empty param: use default
+			return null; # Empty param: use default
 		}
 
 		if ( $val === false || $val === 0 || $val === '0' || $val === 'no' || $val === 'false' ) {
@@ -248,11 +234,10 @@ class HighslideGallery {
 			return true;
 		}
 
-		return null; // Unrecognized: use default
+		return null; # Unrecognized: use default
 	}
 
-	/**
-	 * REFACTOR HELPER: Extract and validate a slideshow group ID from user input.
+	/* REFACTOR HELPER: Extract and validate a slideshow group ID from user input
 	 *
 	 * @param ?string $candidate Raw ID candidate
 	 * @return ?string Valid ID or null if empty/invalid
@@ -265,15 +250,14 @@ class HighslideGallery {
 		if ( $candidate === '' ) {
 			return null;
 		}
-		// Validate format: alphanumeric, dash, underscore, forward-slash
+		# Validate format: alphanumeric, dash, underscore, forward-slash
 		if ( preg_match( '/^[A-Za-z0-9_\/-]+$/', $candidate ) ) {
 			return $candidate;
 		}
 		return null;
 	}
 
-	/**
-	 * REFACTOR HELPER: Build data-hsg-caption and data-hsg-html attributes.
+	/* REFACTOR HELPER: Build data-hsg-caption and data-hsg-html attributes
 	 *
 	 * @param string $captionPlain Plain-text caption (no gallery id)
 	 * @param string $captionHtml HTML fragment for overlay (pre-escaped spans)
@@ -283,15 +267,15 @@ class HighslideGallery {
 	private static function buildDataAttributes( string $captionPlain, string $captionHtml, ?string $groupId ): string {
 		$parts = [];
 
-		// Always include plain-text caption
+		# Always include plain-text caption
 		$parts[] = ' data-hsg-caption="' . self::escAttr( $captionPlain ) . '"';
 
-		// Include HTML when present (e.g. styled spans)
+		# Include HTML when present (e.g. styled spans)
 		if ( $captionHtml !== '' ) {
 			$parts[] = ' data-hsg-html="' . self::escAttr( $captionHtml ) . '"';
 		}
 
-		// Include group id when present
+		# Include group id when present
 		if ( $groupId !== null ) {
 			$parts[] = ' data-hsgid="' . self::escAttr( $groupId ) . '"';
 		}
@@ -299,8 +283,7 @@ class HighslideGallery {
 		return implode( '', $parts );
 	}
 
-	/**
-	 * REFACTOR HELPER: Create an HTML span with class and escaped text.
+	/* REFACTOR HELPER: Create an HTML span with class and escaped text
 	 *
 	 * @param string $text Text content to escape and wrap
 	 * @param string $class CSS class name (must be hardcoded/safe)
@@ -312,13 +295,12 @@ class HighslideGallery {
 			'</span>';
 	}
 
-	/**
-	 * Build plain-text and HTML caption fragments with styling hooks.
+	/* Build plain-text and HTML caption fragments with styling hooks
 	 *
 	 * @param ?string $hsgid Gallery id / label
 	 * @param ?string $titleText Title portion (optional)
 	 * @param ?string $bodyText Caption portion (optional)
-	 * @param bool $includeHsgId Whether to include hsgid in the output parts.
+	 * @param bool $includeHsgId Whether to include hsgid in the output parts
 	 * @param ?Title $linkTitle Optional Title for linking the HTML
 	 * @return array{0:string,1:string} [ plainText, html ]
 	 */
@@ -332,7 +314,7 @@ class HighslideGallery {
 		$partsPlain = [];
 		$partsHtml = [];
 
-		// REFACTOR: Use makeCaptionSpan helper to avoid code duplication in caption building
+		# REFACTOR: Use makeCaptionSpan helper to avoid code duplication in caption building
 		$add = static function ( ?string $raw, string $class ) use ( &$partsPlain, &$partsHtml ) {
 			$raw = $raw ?? '';
 			$trimmed = trim( $raw );
@@ -340,7 +322,7 @@ class HighslideGallery {
 				return;
 			}
 			$partsPlain[] = $trimmed;
-			// Use makeCaptionSpan would be ideal, but it's a static method so we inline here to stay consistent:
+			# Use makeCaptionSpan would be ideal, but it's a static method so we inline here to stay consistent:
 			$partsHtml[] = '<span class="' . $class . '">' .
 				htmlspecialchars( $trimmed, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) .
 				'</span>';
@@ -368,8 +350,7 @@ class HighslideGallery {
 		return [ $plain, $html ];
 	}
 
-	/**
-	 * Assemble overlay and no-id caption parts with shared fallbacks.
+	/* Assemble overlay and no-id caption parts with shared fallbacks
 	 *
 	 * @param ?string $hsgId Gallery id / label (for overlay if allowed)
 	 * @param ?string $titleText Title portion
@@ -417,8 +398,7 @@ class HighslideGallery {
 		return [ $overlayPlain, $overlayHtml, $noIdPlain, $noIdHtml ];
 	}
 
-	/**
-	 * Image helper behind:
+	/* Image helper behind:
 	 * - {{#hsgimg: ...}} (canonical)
 	 *
 	 * Inline vs thumbnail is controlled by the "inline" flag:
@@ -447,9 +427,9 @@ class HighslideGallery {
 			return '';
 		}
 
-		// -----------------------------------------------------------------
-		// 1. Inline vs thumb (same semantics as renderYouTubeHtml)
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 1. Inline vs thumb (same semantics as renderYouTubeHtml)
+		# ----------------------------------------------------------------------
 		$inlineMode = false;
 		if ( array_key_exists( 'inline', $attributes ) ) {
 			$val = $attributes['inline'];
@@ -480,15 +460,15 @@ class HighslideGallery {
 			}
 		}
 
-		// -----------------------------------------------------------------
-		// 2. Normalise title / caption / linktext (unescaped)
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 2. Normalise title / caption / linktext (unescaped)
+		# ----------------------------------------------------------------------
 		$titleRaw = isset( $attributes['title'] ) ? trim( (string)$attributes['title'] ) : '';
 		$captionRaw = isset( $attributes['caption'] ) ? trim( (string)$attributes['caption'] ) : '';
 
-		// Combined caption used for alt / thumb caption / overlay:
-		// - "Title | Caption" if both present
-		// - else Caption → Title → Source
+		# Combined caption used for alt / thumb caption / overlay:
+		# - "Title | Caption" if both present
+		# - else Caption → Title → Source
 		if ( $titleRaw !== '' && $captionRaw !== '' ) {
 			$captionDisplay = $titleRaw . ' | ' . $captionRaw;
 		} elseif ( $captionRaw !== '' ) {
@@ -499,7 +479,7 @@ class HighslideGallery {
 			$captionDisplay = 'Image';
 		}
 
-		// Visible link text for INLINE variant.
+		# Visible link text for INLINE variant.
 		$linkTextRaw = isset( $attributes['linktext'] ) ? trim( (string)$attributes['linktext'] ) : '';
 		if ( $linkTextRaw === '' ) {
 			if ( $titleRaw !== '' ) {
@@ -514,9 +494,9 @@ class HighslideGallery {
 		$captionEsc = self::escAttr( $captionDisplay );
 		$linkTextEsc = self::escAttr( $linkTextRaw );
 
-		// -----------------------------------------------------------------
-		// 3. Resolve target: external URL vs File:
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 3. Resolve target: external URL vs internal link
+		# ----------------------------------------------------------------------
 		$href = $content;
 		$titleObj = Title::newFromText( $content );
 		$fileObj = null;
@@ -530,30 +510,30 @@ class HighslideGallery {
 					$href = $fileObj->getUrl();
 				}
 			} catch ( Exception $e ) {
-				// If repository lookup fails, fall back to raw content URL.
+				# If repository lookup fails, fall back to raw content URL.
 				$fileObj = null;
 			}
 		}
 
 		$hrefEsc = self::escAttr( $href );
 
-		// -----------------------------------------------------------------
-		// 4. Gallery id (optional)
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 4. Gallery id (optional)
+		# ----------------------------------------------------------------------
 		$groupId = self::extractGroupId( 
 			isset( $attributes['hsgid'] ) ? $attributes['hsgid'] 
 			: ( isset( $attributes['id'] ) ? $attributes['id'] : null )
 		);
 
-		// -----------------------------------------------------------------
-		// 5. INLINE VARIANT (text link opener)
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 5. INLINE VARIANT (text link opener)
+		# ----------------------------------------------------------------------
 		if ( $inlineMode ) {
 			if ( $groupId === null ) {
 				$groupId = 'hsg-' . self::generateId( 8 );
 			}
 
-				$thumbId = 'hsg-thumb-' . self::generateId( 8 );
+			$thumbId = 'hsg-thumb-' . self::generateId( 8 );
 
 			[ $captionPlain, $captionHtml, $captionPlainNoId ] = self::assembleCaptionBundle(
 				$groupId,
@@ -597,16 +577,16 @@ class HighslideGallery {
 			];
 		}
 
-		// -----------------------------------------------------------------
-		// 6. THUMBNAIL VARIANT (MW-like thumb structure)
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 6. THUMBNAIL VARIANT (MW-like thumb structure)
+		# ----------------------------------------------------------------------
 		$width = isset( $attributes['width'] ) && $attributes['width'] !== ''
 			? (int)$attributes['width']
-			: self::DEFAULT_THUMB_WIDTH; // canonical PHP-side default; templates can change this
+			: self::DEFAULT_THUMB_WIDTH; # canonical PHP-side default; templates can change this
 
 		$captionBodyForParts = $captionRaw;
-		// Overlay caption may include hsgid; on-page data/alt should not.
-		// Note: $groupId is non-null only if extractGroupId() returned valid; if non-null, it's guaranteed non-empty.
+		# Overlay caption may include hsgid; on-page data/alt should not
+		# Note: $groupId is non-null only if extractGroupId() returned valid; guaranteed non-empty
 		$hasExplicitHsgId = $groupId !== null;
 		[
 			$captionPlainOverlay,
@@ -646,8 +626,8 @@ class HighslideGallery {
 
 		$s = $hsg . $hsgimg . ' /></a>';
 
-		// For hsgimg thumbs we keep the original behaviour: no File object/title
-		// is passed into AddHighslide (only MakeImageLink does that).
+		# For hsgimg thumbs, keep the original behaviour: no File object/title
+		# is passed into AddHighslide (only MakeImageLink does that)
 		self::AddHighslide( $s, null, $captionDisplay, null, $titleRaw, $captionBodyForParts, $groupId, $hasExplicitHsgId );
 
 		$thumbStyle = '';
@@ -666,8 +646,7 @@ class HighslideGallery {
 		return [ $s, 'isHTML' => true ];
 	}
 
-	/**
-	 * Parser function wrapper for YouTube:
+	/* Parser function wrapper for YouTube:
 	 *
 	 * By default, tags are inline and parser functions are thumbs; the inline flag overrides this:
 	 * - inline=1 / yes / true → inline text link opener
@@ -682,7 +661,7 @@ class HighslideGallery {
 	 *
 	 * Rules:
 	 * - primary = first non-empty param without '=' OR source=...
-	 * - Remaining params as key=value attributes; bare tokens are flags.
+	 * - Remaining params as key=value attributes; bare tokens are flags
 	 */
 	public static function onFunctionHsgYtb( Parser $parser, ...$params ) {
 		[ $source, $attributes ] = self::parseParserFunctionArgs( $params, 'source' );
@@ -700,8 +679,7 @@ class HighslideGallery {
 		];
 	}
 
-	/**
-	 * Shared builder for YouTube links/thumbnails.
+	/* Shared builder for YouTube links/thumbnails
 	 *
 	 * Used by:
 	 * - onTagHsYouTube() → <hsyoutube>…</hsyoutube>
@@ -715,25 +693,25 @@ class HighslideGallery {
 		?PPFrame $frame = null,
 		bool $fromParserFunc = false
 	) {
-		// -----------------------------------------------------------------
-		// 1. Extract video code from $source
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 1. Extract video code from $source
+		# ----------------------------------------------------------------------
 		$raw = trim( (string)$source );
 		$code = '';
 
-		// 1) Try normal URL shapes first.
+		# Try normal URL shapes first.
 		if ( preg_match( '/[?&]v=([^?&]+)/', $raw, $m ) ) {
-			// https://www.youtube.com/watch?v=CODE
+			# https://www.youtube.com/watch?v=CODE
 			$code = $m[1];
 		} elseif ( preg_match( '#youtu\.be/([^?]+)#', $raw, $m ) ) {
-			// https://youtu.be/CODE
+			# https://youtu.be/CODE
 			$code = $m[1];
 		} elseif ( preg_match( '#/embed/([^?]+)#', $raw, $m ) ) {
-			// https://www.youtube.com/embed/CODE
+			# https://www.youtube.com/embed/CODE
 			$code = $m[1];
 		} else {
-			// 2) Fallback: treat as bare video ID if it looks like a sane token.
-			// YouTube IDs are typically 11 characters; require that shape here.
+			# Fallback: treat as bare video ID if it looks like a sane token
+			# YouTube IDs are typically 11 characters
 			if ( preg_match( '/^[A-Za-z0-9_-]{11}$/', $raw ) ) {
 				$code = $raw;
 			} else {
@@ -741,16 +719,16 @@ class HighslideGallery {
 			}
 		}
 
-		// -----------------------------------------------------------------
-		// 2. Normalise title / caption / linktext (unescaped)
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 2. Normalise title / caption / linktext (unescaped)
+		# ----------------------------------------------------------------------
 		$titleRaw = isset( $attributes['title'] ) ? trim( (string)$attributes['title'] ) : '';
 		$captionRaw = isset( $attributes['caption'] ) ? trim( (string)$attributes['caption'] ) : '';
 
 		$linkTextRaw = $attributes['linktext'] ?? '';
 		$linkTextRaw = is_string( $linkTextRaw ) ? trim( $linkTextRaw ) : '';
 
-		// Visible link text (used only for INLINE links).
+		# Visible link text (used only for INLINE links)
 		if ( $linkTextRaw === '' ) {
 			if ( $titleRaw !== '' ) {
 				$linkTextRaw = $titleRaw;
@@ -761,9 +739,9 @@ class HighslideGallery {
 			}
 		}
 
-		// Combined caption string for alt / caption / overlay:
-		// - "Title | Caption" if both present
-		// - else Caption → Title → LinkText
+		# Combined caption string for alt / caption / overlay:
+		# - "Title | Caption" if both present
+		# - else Caption → Title → LinkText
 		if ( $titleRaw !== '' && $captionRaw !== '' ) {
 			$captionDisplay = $titleRaw . ' | ' . $captionRaw;
 		} elseif ( $captionRaw !== '' ) {
@@ -774,28 +752,28 @@ class HighslideGallery {
 			$captionDisplay = $linkTextRaw;
 		}
 
-		// Title attribute prefers title, else the combined caption.
+		# Title attribute prefers title, else the combined caption
 		$titleForAttr = $titleRaw !== '' ? $titleRaw : $captionDisplay;
 
-		// -----------------------------------------------------------------
-		// 3. Autoplay / width / inline mode
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 3. Autoplay / width / inline mode
+		# ----------------------------------------------------------------------
 		$autoplayOn = array_key_exists( 'autoplay', $attributes ) &&
 			$attributes['autoplay'] !== '' &&
 			$attributes['autoplay'] !== '0' &&
 			$attributes['autoplay'] !== 0 &&
 			$attributes['autoplay'] !== false;
 
-		// Width (used only for thumbnails).
+		# Width (used only for thumbnails).
 		$width = self::DEFAULT_THUMB_WIDTH;
 		if ( isset( $attributes['width'] ) && $attributes['width'] !== '' ) {
 			$width = (int)$attributes['width'];
 			unset( $attributes['width'] );
 		}
 		
-		// Determine inline mode:
-		// - Tags (<hsyoutube>, <hsgytb>): default inline text
-		// - Parser function (#hsgytb): default thumbnail
+		# Determine inline mode:
+		# - Tags (<hsyoutube>, <hsgytb>): default inline text
+		# - Parser function (#hsgytb): default thumbnail
 		$inlineMode = !$fromParserFunc;
 
 		if ( array_key_exists( 'inline', $attributes ) ) {
@@ -827,7 +805,7 @@ class HighslideGallery {
 			}
 		}
 
-		// Build player URL with query flags.
+		# Build player URL with query flags
 		$query = [];
 		if ( $autoplayOn ) {
 			$query[] = 'autoplay=1';
@@ -839,9 +817,9 @@ class HighslideGallery {
 
 		$href = 'https://www.youtube.com/embed/' . rawurlencode( $code ) . '?' . implode( '&', $query );
 
-		// -----------------------------------------------------------------
-		// 4. Optional gallery id so YT tiles can join image galleries (slideshowGroup analogue).
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 4. slideshowGroup analogue so YT tiles can join image galleries
+		# ----------------------------------------------------------------------
 		$groupId = null;
 		$hasExplicitHsgId = false;
 		if ( isset( $attributes['hsgid'] ) && $attributes['hsgid'] !== '' ) {
@@ -851,7 +829,7 @@ class HighslideGallery {
 			}
 			unset( $attributes['hsgid'] );
 		} elseif ( isset( $attributes['id'] ) && $attributes['id'] !== '' ) {
-			// Legacy/short name.
+			# Legacy/short name.
 			$groupId = self::extractGroupId( $attributes['id'] );
 			if ( $groupId !== null ) {
 				$hasExplicitHsgId = true;
@@ -859,9 +837,7 @@ class HighslideGallery {
 			unset( $attributes['id'] );
 		}
 
-		// -----------------------------------------------------------------
-		// 4b. Caption assembly (overlay can include hsgid; data/alt should not)
-		// -----------------------------------------------------------------
+		# Caption assembly (overlay can include hsgid; data/alt should not)
 		$captionBodyForParts = $captionRaw;
 		[
 			$captionPlain,
@@ -883,7 +859,7 @@ class HighslideGallery {
 		$titleEsc = self::escAttr( $captionPlainNoId !== '' ? $captionPlainNoId : $titleForAttr );
 		$linkTextEsc = self::escAttr( $linkTextRaw );
 		$captionPlainEsc = self::escAttr( $captionPlainNoId );
-		// Expose plain-text caption (no-id) and, when present, overlay HTML via data-hsg-html
+		# Expose plain-text caption (no-id) and, when present, overlay HTML via data-hsg-html
 		$dataCaption = ' data-hsg-caption="' . self::escAttr( $captionPlainNoId ) . '"';
 		if ( $captionHtml !== '' ) {
 			$dataCaption .= ' data-hsg-html="' . self::escAttr( $captionHtml ) . '"';
@@ -893,11 +869,11 @@ class HighslideGallery {
 			? ' data-hsgid="' . self::escAttr( $groupId ) . '"'
 			: '';
 
-		// -----------------------------------------------------------------
-		// 5. INLINE vs THUMBNAIL output
-		// -----------------------------------------------------------------
+		# ----------------------------------------------------------------------
+		# 5. INLINE vs THUMBNAIL output
+		# ----------------------------------------------------------------------
 		if ( $inlineMode ) {
-			// INLINE TEXT LINK - always invoke Highslide via inline onclick.
+			# INLINE TEXT LINK - always invoke Highslide via inline onclick.
 			$s = '<a class="highslide link-youtube hsg-thumb"';
 			$s .= ' title="' . $titleEsc . '"';
 			$s .= ' href="' . self::escAttr( $href ) . '"';
@@ -911,7 +887,7 @@ class HighslideGallery {
 
 			return $s;
 		} else {
-			// THUMBNAIL LINK (MW-like thumb structure)
+			# THUMBNAIL LINK (MW-like thumb structure)
 			$thumbUrl = 'https://img.youtube.com/vi/' . rawurlencode( $code ) . '/hqdefault.jpg';
 			$style = '';
 
@@ -938,7 +914,7 @@ class HighslideGallery {
 
 			$captionHtmlBlock = ( !$suppressThumbCaption && $captionPlainNoId !== '' )
 				? '<div class="thumbcaption hsg-caption">' .
-					// If captionHtmlNoId is plain text, escape it.
+					# If captionHtmlNoId is plain text, escape it.
 					( strpos( $captionHtmlNoId, '<span' ) === false
 						? htmlspecialchars( $captionHtmlNoId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' )
 						: $captionHtmlNoId ) .
@@ -955,7 +931,7 @@ class HighslideGallery {
 	}
 
 	public static function MakeImageLink(
-		&$dummy, // Hook signature requires this; not used in function body
+		&$dummy, # Hook signature requires this; not used in function body
 		&$title,
 		&$file,
 		&$frameParams,
@@ -969,7 +945,7 @@ class HighslideGallery {
 			isset( $frameParams['caption'] ) &&
 			preg_match( '/^(hsgid|highslide)[^:]*:/i', $frameParams['caption'] )
 		) {
-			// hsgid=Foo-Bar/Baz:Caption OR highslide=Foo-Bar/Baz:Caption
+			# hsgid=Foo-Bar/Baz:Caption OR highslide=Foo-Bar/Baz:Caption
 			preg_match(
 				'/^(hsgid|highslide)=(?!:)([A-Za-z0-9_\/-]+)/i',
 				$frameParams['caption'],
@@ -977,16 +953,16 @@ class HighslideGallery {
 			);
 
 			if ( !empty( $galleryIdMatches[2] ) ) {
-				// Explicit group id
+				# Explicit group id
 				self::$hsgId = $galleryIdMatches[2];
-				self::$hsgLabel = $galleryIdMatches[2]; // label starts as the explicit id
+				self::$hsgLabel = $galleryIdMatches[2]; # label starts as the explicit id
 			} else {
-				// No id after = → treat as “no group”
+				# No id after '='; treat as “no group”
 				self::$hsgId = null;
 				self::$hsgLabel = null;
 			}
 
-			// Strip the hsgid=/highslide= prefix from caption/alt/title
+			# Strip the hsgid=/highslide= prefix from caption/alt/title
 			$frameParams['caption'] = preg_replace(
 				'/^(hsgid|highslide)[^:]*:/i',
 				'',
@@ -1015,8 +991,7 @@ class HighslideGallery {
 		return true;
 	}
 
-	/**
-	 * Core decorator: take an <a><img></a> thumb string and attach Highslide
+	/* Core decorator: take an <a><img></a> thumb string and attach Highslide
 	 * semantics (slideshowGroup, caption text, MediaViewer shielding, etc.).
 	 */
 	private static function AddHighslide(
@@ -1029,11 +1004,12 @@ class HighslideGallery {
 		?string $hsgIdText = null,
 		bool $includeHsgIdInOverlay = true
 	) {
-		// Derive base label:
-		// - if we have an explicit hsgLabel (id), use it;
-		// - else if there's a File object, use its name;
-		// - else fall back to the raw caption or a generic label.
-		// Note: hsgLabel is non-null only when set with an explicit id; if non-null, it's guaranteed non-empty.
+		/* Derive base label:
+		 * - if we have an explicit hsgLabel (id), use it;
+		 * - else if there's a File object, use its name;
+		 * - else fall back to the raw caption or a generic label.
+		 * Note: hsgLabel is non-null only when set with an explicit id; if non-null, it's guaranteed non-empty.
+		 */
 		if ( self::$hsgLabel !== null ) {
 			$label = self::$hsgLabel;
 		} elseif ( $file ) {
@@ -1048,7 +1024,7 @@ class HighslideGallery {
 		$captionText = $captionText !== null ? trim( $captionText ) : trim( (string)$caption );
 		$hsgIdText = $hsgIdText !== null ? trim( $hsgIdText ) : $label;
 
-		// Overlay caption (with optional hsgid) and plain text (no hsgid) for data/alt.
+		# Overlay caption (with optional hsgid) and plain text (no hsgid) for data/alt
 		[
 			$displayWithId,
 			$captionHtml,
@@ -1067,44 +1043,44 @@ class HighslideGallery {
 			$display = $label;
 		}
 
-		// Escape for HTML/attribute context (data/alt should use no-id string).
+		# Escape for HTML/attribute context (data/alt should use no-id string)
 		$displayEsc = self::escAttr( $display );
 
-		// Ensure gallery/group id and decide whether this is a multi-image gallery member.
+		# Ensure gallery/group id and decide whether this is a multi-image gallery member
 		if ( self::$hsgId === null ) {
-			// No explicit id: each call gets its own unique group → single-member galleries.
+			# No explicit id: each call gets its own unique group → single-member galleries
 			self::$hsgId = 'hsg-' . self::generateId( 8 );
 			self::$isHsgGroupMember = false;
 		} else {
-			// Explicit id: if it's the same as the last group, this is a gallery member;
-			// if it's new, treat this as the first image in a new gallery.
+			# Explicit id: if it's the same as the last group, this is a gallery member;
+			# if it's new, treat this as the first image in a new gallery.
 			if ( self::$lastHsgGroupId !== null && self::$lastHsgGroupId === self::$hsgId ) {
-				self::$isHsgGroupMember = true; // same group as previous
+				self::$isHsgGroupMember = true; # same group as previous
 			} else {
-				self::$isHsgGroupMember = false; // first in this id's group
+				self::$isHsgGroupMember = false; # first in this id's group
 			}
 		}
-		// Remember this group for next call on the page.
+		# Remember this group for next call on the page
 		self::$lastHsgGroupId = self::$hsgId;
 
-			// Prepare JS options safely using JSON (avoids breaking on quotes).
+			# Prepare JS options safely using JSON (avoids breaking on quotes)
 			$opts = [
 				'slideshowGroup' => (string)self::$hsgId,
-				// Already HTML; Highslide treats caption as HTML fragment.
+				# Already HTML; Highslide treats caption as HTML fragment
 				'captionText' => $captionHtml,
 			];
-		// Let Highslide's global hs.numberPosition decide where the index appears
-		// (we set it to 'caption' in highslide.cfg.js).
+		# Let Highslide's global hs.numberPosition decide where the index appears
+		# (we set it to 'caption' in highslide.cfg.js).
 		$optsJson = FormatJson::encode( $opts );
 
-		// Data attribute and alt should use the no-id plain display
+		# Data attribute and alt should use the no-id plain display
 		$displayEsc = self::escAttr( $display );
 
-		// Use DOMDocument to robustly inject attributes/classes instead of fragile regexes.
-		// PERFORMANCE NOTE: Creates a DOMDocument per thumbnail. For high-volume galleries (100+ items),
-		// consider caching or using string manipulation if profiling shows this as a bottleneck.
+		# Use DOMDocument to robustly inject attributes/classes instead of fragile regexes.
+		# PERFORMANCE NOTE: Creates a DOMDocument per thumbnail. For high-volume galleries (100+ items),
+		# consider caching or using string manipulation if profiling shows this as a bottleneck.
 		if ( !extension_loaded( 'dom' ) ) {
-			// DOM extension missing; skip DOM-based injection (rare on MediaWiki hosts).
+			# DOM extension missing; skip DOM-based injection (rare on MediaWiki hosts)
 			return;
 		}
 
@@ -1159,7 +1135,6 @@ class HighslideGallery {
 			$s = $newHtml;
 		}
 
-		// Reset per-call gallery flag.
-		self::$isHsgGroupMember = false;
+		self::$isHsgGroupMember = false; # Reset per-call gallery flag
 	}
 }

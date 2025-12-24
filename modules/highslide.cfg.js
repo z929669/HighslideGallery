@@ -18,30 +18,16 @@
  * < https://www.gnu.org/licenses/ >.
  */
 
-/*
- * HighslideGallery configuration for Highslide 5.x
- * Assumes highslide-full.js has already run and created global `hs`.
- *
- * Vendor:
- * - `hs` and its properties
- * - `.highslide-*`, `.you-tube`, `.link-youtube`
- * - `hsgVideoOptions` as the base options object
- *
- * HSG:
- * - All `hsg-*` classes (e.g. `hsg-frame`)
- * - Any additional helpers or overlays we register here
- */
+window.__HSG_BUILD__ = '20251223.1'; // Build identifier for debugging
 
-window.__HSG_BUILD__ = '20251222.4'; // Build identifier for debugging
-
-// Bridge ResourceLoader's local `hs` into the global scope so inline handlers work.
+/* Bridge ResourceLoader's local `hs` into the global scope so inline handlers work */
 if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
 	window.hs = window.hs || hs;
 }
 
-// -------------------------------------------------------------------------
-// Core Highslide behaviour
-// -------------------------------------------------------------------------
+/* -------------------------------------------------------------------------
+ * Core Highslide behaviour
+ * ------------------------------------------------------------------------- */
 
 hs.graphicsDir = mw.config.get( 'wgExtensionAssetsPath' ) +
 	'/HighslideGallery/modules/graphics/';
@@ -51,42 +37,34 @@ hs.showCredits			= false;
 hs.align				= 'center';
 hs.dimmingOpacity		= 0.75;
 hs.outlineType			= null; // CSS-driven frame
-// HSG-specific wrapper class; `floating-caption` is vendor CSS.
-hs.wrapperClassName		= 'hsg-frame floating-caption';
+hs.wrapperClassName		= 'hsg-frame floating-caption'; // `floating-caption` is vendor CSS
 
 hs.marginTop			= 40;
 hs.marginBottom			= 40;
 hs.marginLeft			= 30;
 hs.marginRight			= 30;
 
-/* Transitions (image, caption, and thumbstrip/controls) default to image zoom in/out on open/close AND
- * gallery navigation with fade in/out of caption and thumbstrip/controls during gallery navigation. Comment
- * all of the following for the default.
- */
-//hs.transitions		= [ 'expand', 'crossfade' ]; // overlay zoom in/out on open/close only; 'crossfade' image transition; caption fade; thumbstrip/controls static
-hs.transitions			= [ 'fade', 'crossfade' ]; // overlay fade in/out on open/close only; 'crossfade' image transition; caption fade; thumbstrip/controls static
+//hs.transitions		= [ 'expand', 'crossfade' ]; // overlay zoom in/out on open/close only; 'crossfade' image transitions; thumbstrip/controls static
+hs.transitions			= [ 'fade', 'crossfade' ]; // overlay fade in/out on open/close only; 'crossfade' image transitions; thumbstrip/controls static
 hs.transitionDuration	= 0; // Default: 250; duration of ANY enabled transitions/animations of images, captions, or overlay
 //hs.expandDuration		= 0; // Default: 250; duration of image transitions zoom in/out
 //hs.restoreDuration	= 0; // Default: 250; duration of zoom out on closing the overlay
 
+hs.fullExpandToggle		= true; // Vendor zoom toggle (fit <-> 1:1) support
+hs.closeOnClick			= false; // Do not close when clicking the image itself; use controls/dimmer instead
 
-// 2025-11-27 HSG: enable vendor zoom toggle (fit <-> 1:1) support
-hs.fullExpandToggle = true;
+/* Show image index in the caption area (vendor feature, configured here) */
+hs.numberPosition		= 'caption';
+hs.lang.number			= 'Member %1 of %2';
 
-// Allow custom thumbnailId (used for inline text links with hidden thumb proxies)
+/* Allow custom thumbnailId (used for inline text links with hidden thumb proxies) */
 if ( Array.isArray( hs.overrides ) && hs.overrides.indexOf( 'thumbnailId' ) === -1 ) {
 	hs.overrides.push( 'thumbnailId' );
 }
 
-// Do not close when clicking the image itself; use controls/dimmer instead.
-hs.closeOnClick			= false;
-
-// Show image index in the caption area (vendor feature, configured here).
-hs.numberPosition		= 'caption';
-hs.lang.number			= 'Member %1 of %2';
-
-// Add controls preset as a sanitized class so CSS can target layout presets.
-// e.g. wgHSGControlsPreset === 'stacked-top' -> hsg-preset-stacked-top
+/* Add controls preset as a sanitized class so CSS can target layout presets.
+ * e.g. wgHSGControlsPreset === 'stacked-top' -> hsg-preset-stacked-top
+ */
 var HSG_CONTROLS_PRESET = ( typeof mw !== 'undefined' && typeof mw.config !== 'undefined' && typeof mw.config.get === 'function' )
 	? ( mw.config.get( 'wgHSGControlsPreset' ) || 'classic' )
 	: 'classic';
@@ -97,7 +75,7 @@ if ( typeof hs.wrapperClassName === 'string' ) {
 } else {
 	hs.wrapperClassName = 'hsg-frame floating-caption ' + HSG_PRESET_CLASS;
 }
-// Ensure any Highslide-created viewport containers also get the preset class.
+/* Ensure any Highslide-created viewport containers also get the preset class */
 if ( typeof MutationObserver !== 'undefined' ) {
 	(function () {
 		var mo = new MutationObserver( function ( mutations ) {
@@ -107,7 +85,7 @@ if ( typeof MutationObserver !== 'undefined' ) {
 						if ( node.classList && node.classList.contains( 'highslide-viewport' ) ) {
 							node.classList.add( HSG_PRESET_CLASS );
 						}
-						// Also catch wrapper elements created under the viewport
+						/* Also catch wrapper elements created under the viewport */
 						var viewports = node.querySelectorAll && node.querySelectorAll( '.highslide-viewport' );
 						if ( viewports && viewports.length ) {
 							Array.prototype.forEach.call( viewports, function ( vp ) { vp.classList.add( HSG_PRESET_CLASS ); } );
@@ -120,7 +98,7 @@ if ( typeof MutationObserver !== 'undefined' ) {
 	}() );
 }
 
-// Basic coarse-pointer detection for touch support
+/* Basic coarse-pointer detection for touch support */
 var HSG_IS_COARSE_POINTER = ( function () {
 	if ( typeof window === 'undefined' ) {
 		return false;
@@ -135,7 +113,8 @@ var HSG_IS_COARSE_POINTER = ( function () {
 	return 'ontouchstart' in window;
 }() );
 
-// Map single-finger touch drag to Highslide's mouse drag (move or pan when zoomed)
+/* Map single-finger touch drag to Highslide's mouse drag (move or pan when zoomed)
+ */
 function hsgAttachTouchPan( exp ) {
 	if ( !HSG_IS_COARSE_POINTER || !exp || exp._hsgTouchPanAttached ) {
 		return;
@@ -208,14 +187,13 @@ function hsgAttachTouchPan( exp ) {
 	exp._hsgTouchPanAttached = true;
 }
 
-// Cancel Highslide's default "click image to close".
+/* Cancel Highslide's default "click image to close" */
 if ( hs.Expander && hs.Expander.prototype ) {
 	hs.Expander.prototype.onImageClick = function () {
-		// Returning false stops exp.close() in Highslide's mouse handler.
-		return false;
+		return false; // Returning false stops exp.close() in Highslide's mouse handler
 	};
 
-	// 2025-11-27 HSG: disable zoom control for non-image content (e.g., videos)
+	/* Disable zoom control for non-image content (e.g., videos) */
 	if ( !hs._hsgPatchedFullForNonImages ) {
 		hs._hsgPatchedFullForNonImages = true;
 		var _hsgOrigAfterExpand = hs.Expander.prototype.afterExpand;
@@ -244,12 +222,10 @@ if ( hs.Expander && hs.Expander.prototype ) {
 	}
 }
 
-// (Reverted) No override: restore vendor animation behavior so we can reproduce
-// the original thumbstrip/controls behavior when `hs.transitions` is set.
+/* -------------------------------------------------------------------------
+ * Minimal viewport-relative overlay alignment (horizontal only)
+ * ------------------------------------------------------------------------- */
 
-// -------------------------------------------------------------------------
-// Minimal viewport-relative overlay alignment (horizontal only)
-// -------------------------------------------------------------------------
 if ( hs.Expander && hs.Expander.prototype && !hs.Expander.prototype._hsgPatchedOverlayCenter ) {
 	hs.Expander.prototype._hsgPatchedOverlayCenter = true;
 	var _hsgOrigPositionOverlay = hs.Expander.prototype.positionOverlay;
@@ -285,9 +261,9 @@ if ( hs.Expander && hs.Expander.prototype && !hs.Expander.prototype._hsgPatchedO
 	};
 }
 
-// -------------------------------------------------------------------------
-// Language tweaks
-// -------------------------------------------------------------------------
+/* -------------------------------------------------------------------------
+ * Language tweaks
+ * ------------------------------------------------------------------------- */
 
 hs.lang = hs.lang || {};
 
@@ -304,7 +280,7 @@ function hsgMsg( key, fallback ) {
 	return fallback;
 }
 
-// Fine tuning for hovertext and control tooltips.
+/* Fine tuning for hovertext and control tooltips. */
 var hsgRestoreTitleDefault =
 	'Click/drag to move image. Use controls or keyboard arrow keys to navigate, f key ' +
 	'to zoom in/out, spacebar to play/pause. Press Esc, or click close/margins to exit.';
@@ -322,11 +298,10 @@ hs.lang.pauseTitle		= hsgMsg( 'hsg-pause-title', hs.lang.pauseTitle );
 hs.lang.number			= hsgMsg( 'hsg-number', hs.lang.number || 'Member %1 of %2' );
 hs.lang.restoreTitle	= hsgMsg( 'hsg-hover-instructions', hsgRestoreTitleDefault );
 
-// -------------------------------------------------------------------------
-// Overlays & controls
-// -------------------------------------------------------------------------
-
-/*
+/* -------------------------------------------------------------------------
+ * Overlays & controls
+ * -------------------------------------------------------------------------
+ *
  * Control layout presets so swapping positions is a simple config change
  * instead of manual CSS tweaks.
  *
@@ -400,8 +375,7 @@ function hsgSelectControlLayoutPreset() {
 	};
 }
 
-/*
- * Global close overlay (images + HTML/iframe).
+/* Global close overlay (images + HTML/iframe).
  * HSG-specific CSS hook: `.controls.close` is styled in highslide.override.css.
  */
 hs.registerOverlay( {
@@ -412,8 +386,7 @@ hs.registerOverlay( {
 	useOnHtml: true
 } );
 
-/*
- * Slideshow for images (controls + thumbstrip).
+/* Slideshow for images (controls + thumbstrip).
  * Uses vendor `.highslide-controls` and thumbstrip styles.
  */
 function hsgConfigureImageSlideshow() {
@@ -435,37 +408,98 @@ function hsgConfigureImageSlideshow() {
 	} );
 }
 
-// Configure immediately now that wgHSGControlsPreset is provided before module load.
+/* Configure immediately now that wgHSGControlsPreset is provided before module load. */
 hsgConfigureImageSlideshow();
 
-/*
- * Prevent slideshow "Play" and manual Next from closing the expander
- * when there is no next/previous slide. Instead, stop autoplay and stay
- * on the current image.
+/* -------------------------------------------------------------------------
+ * Behaviour patches (overlay navigation and controls)
+ * -------------------------------------------------------------------------
+ *
+ * Prevent slideshow "Play" and manual Next from closing the expander when there is no next/previous
+ * slide. Instead, stop autoplay and stay on the current image.
  */
 if (typeof hs.transit === 'function' && !hs._hsgPatchedTransit) {
 	hs._hsgPatchedTransit = true;
 	hs._hsgOrigTransit = hs.transit;
 
 	hs.transit = function (adj, exp) {
-		// No adjacent anchor → end of gallery in this direction.
+		/* No adjacent anchor means end of gallery in this direction */
 		if (!adj) {
-			// If autoplay is running, pause it so controls reflect reality.
+			/* If autoplay is running, pause it so controls reflect reality */
 			if (exp && exp.slideshow && typeof exp.slideshow.pause === 'function') {
 				exp.slideshow.pause();
 			}
-			// Keep the current expander open.
+			/* Keep the current expander open */
 			return false;
 		}
 
-		// Normal case: delegate to original behaviour.
+		/* Normal case: delegate to original behaviour */
 		return hs._hsgOrigTransit(adj, exp);
 	};
 }
 
-/*
- * Slideshow for YouTube (group "videos", no extra controls).
- * Group name is a configuration constant shared with `hsgVideoOptions.slideshowGroup`.
+/* Keep the play control visible during autoplay so the control bar layout stays aligned. */
+if (hs.Slideshow && hs.Slideshow.prototype && !hs.Slideshow.prototype._hsgPatchedPlayVisibility) {
+	hs.Slideshow.prototype._hsgPatchedPlayVisibility = true;
+	hs.Slideshow.prototype._hsgOrigPlay = hs.Slideshow.prototype.play;
+	hs.Slideshow.prototype._hsgOrigPause = hs.Slideshow.prototype.pause;
+
+	hs.Slideshow.prototype.play = function ( wait ) {
+		var res = typeof this._hsgOrigPlay === 'function'
+			? this._hsgOrigPlay.call( this, wait )
+			: undefined;
+
+		if ( this.btn && this.btn.play ) {
+			this.btn.play.style.display = '';
+		}
+		if ( this.btn && this.btn.pause ) {
+			this.btn.pause.style.display = 'none';
+		}
+
+		return res;
+	};
+
+	hs.Slideshow.prototype.pause = function () {
+		var res = typeof this._hsgOrigPause === 'function'
+			? this._hsgOrigPause.call( this )
+			: undefined;
+
+		if ( this.btn && this.btn.play ) {
+			this.btn.play.style.display = '';
+		}
+		if ( this.btn && this.btn.pause ) {
+			this.btn.pause.style.display = 'none';
+		}
+
+		return res;
+	};
+}
+
+/* Prevent keyboard navigation from disabling itself when hitting gallery boundaries. */
+if (typeof hs.previousOrNext === 'function' && !hs._hsgPatchedPreviousOrNext) {
+	hs._hsgPatchedPreviousOrNext = true;
+	hs._hsgOrigPreviousOrNext = hs.previousOrNext;
+
+	hs.previousOrNext = function ( el, op ) {
+		var exp = hs.getExpander( el );
+		if ( !exp ) {
+			return false;
+		}
+
+		var adj = exp.getAdjacentAnchor( op );
+		var result = hs.transit( adj, exp );
+
+		if ( !adj ) {
+			/* Re-attach the key listener so arrow/space handling stays active */
+			hs.addEventListener( document, window.opera ? 'keypress' : 'keydown', hs.keyHandler );
+		}
+
+		return result;
+	};
+}
+
+/* Slideshow for YouTube (group "videos", no extra controls)
+ * Group name is a configuration constant shared with `hsgVideoOptions.slideshowGroup`
  */
 hs.addSlideshow( {
 	slideshowGroup: 'videos',
@@ -474,7 +508,7 @@ hs.addSlideshow( {
 	fixedControls: false
 } );
 
-// Prefer image content for thumbstrip items (handles inline text links with hidden img proxies).
+/* Prefer image content for thumbstrip items (handles inline text links with hidden img proxies). */
 hs.stripItemFormatter = function ( anchor ) {
 	if ( anchor && anchor.querySelector ) {
 		var img = anchor.querySelector( 'img' );
@@ -485,21 +519,18 @@ hs.stripItemFormatter = function ( anchor ) {
 	return anchor ? anchor.innerHTML : '';
 };
 
-// -------------------------------------------------------------------------
-// Video options (used by hs.htmlExpand via MakeYouTubeLink / hsgytb)
-// -------------------------------------------------------------------------
+/* -------------------------------------------------------------------------
+ * Video options (used by hs.htmlExpand via MakeYouTubeLink / hsgytb)
+ * ------------------------------------------------------------------------- */
 
-/*
- * `hsgVideoOptions` is kept as the vendor-style base object. HSG code
- * may later wrap or clone this (e.g. via `hsgGetVideoOptions`) but
- * the canonical global name remains `hsgVideoOptions`.
+/* `hsgVideoOptions` is kept as the vendor-style base object. HSG code may later wrap or clone this
+ * (e.g. via `hsgGetVideoOptions`) but the canonical global name remains `hsgVideoOptions`.
  */
 var hsgVideoOptions = {
 	slideshowGroup: 'videos',
 	objectType: 'iframe',
 	width: 720, // used as a baseline; auto-fit will override per click
 	height: 480,
-	// `you-tube` is a vendor skin hook; `hsg-frame` is HSG-specific.
 	wrapperClassName: 'you-tube hsg-frame',
 	allowSizeReduction: false,
 	preserveContent: false,
@@ -509,11 +540,9 @@ var hsgVideoOptions = {
 
 window.hsgVideoOptions = hsgVideoOptions;
 
-/*
- * Per-click helper for YouTube expanders so they can join image galleries.
- * Reads data-hsgid (slideshowGroup) and data-hsg-caption (captionText) off
- * the anchor and merges them into a clone of hsgVideoOptions. Also sizes the
- * iframe to a best-fit 16:9 box within the current viewport and HS margins.
+/* Per-click helper for YouTube expanders so they can join image galleries. Reads data-hsgid (slideshowGroup)
+ * and data-hsg-caption (captionText) off the anchor and merges them into a clone of hsgVideoOptions. Also sizes
+ * the iframe to a best-fit 16:9 box within the current viewport and HS margins.
  */
 window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 	if ( typeof hs === 'undefined' || !anchor ) {
@@ -543,12 +572,12 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 		opts.slideshowGroup = hsgId;
 	}
 
-	// Align numbering position with images when grouping is enabled.
+	/* Align numbering position with images when grouping is enabled */
 	if ( !opts.numberPosition ) {
 		opts.numberPosition = hs.numberPosition || 'caption';
 	}
 
-	// Viewport-aware sizing (16:9 best fit within HS margins).
+	/* Viewport-aware sizing (16:9 best fit within HS margins) */
 	var page = hs.getPageSize ? hs.getPageSize() : { width: 0, height: 0 };
 	var marginW = (hs.marginLeft || 0) + (hs.marginRight || 0);
 	var marginH = (hs.marginTop || 0) + (hs.marginBottom || 0);
@@ -565,12 +594,12 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 	return hs.htmlExpand( anchor, opts );
 };
 
-// -------------------------------------------------------------------------
-// DOM cleanup: prevent MediaWiki thumb float on HSG thumbs (e.g. when templates
-// are used inside lists and MW wraps the first item in a floated thumb).
-// -------------------------------------------------------------------------
+/* -------------------------------------------------------------------------
+ * DOM cleanup: prevent MediaWiki thumb float on HSG thumbs (e.g. when templates
+ * are used inside lists and MW wraps the first item in a floated thumb).
+ * ------------------------------------------------------------------------- */
 
-// Shared selectors and helpers for thumb/list normalization.
+/* Shared selectors and helpers for thumb/list normalization. */
 var HSG_LIST_ITEM_SELECTOR = 'ul > li, ol > li, dl > dd';
 var HSG_THUMB_SELECTOR = '.thumb';
 var HSG_GALLERY_TEXT_SELECTOR = '.gallery.text-break';
@@ -667,7 +696,8 @@ function hsgFixThumbFloat( root ) {
 	} );
 }
 
-// Normalize list-based galleries and wrap thumbs within each list item so they stay together.
+/* Normalize list-based galleries and wrap thumbs within each list item so they stay together
+ */
 function hsgNormalizeListGalleries( root ) {
 	var scope = root || document;
 	var listItems = scope.querySelectorAll( HSG_LIST_ITEM_SELECTOR );
@@ -686,7 +716,7 @@ function hsgNormalizeListGalleries( root ) {
 			li.querySelectorAll( ':scope > ' + HSG_GALLERY_TEXT_SELECTOR + ', :scope > .thumb' )
 		);
 
-		// Drop empty gallery placeholders to avoid wrapping dead nodes.
+		/* Drop empty gallery placeholders to avoid wrapping dead nodes */
 		directBlocks = directBlocks.filter( function ( node ) {
 			var isGallery = node.classList && node.classList.contains( 'gallery' ) && node.classList.contains( 'text-break' );
 			if ( isGallery && !node.querySelector( '.thumb' ) ) {
@@ -719,7 +749,8 @@ function hsgNormalizeListGalleries( root ) {
 	} );
 }
 
-// 2025-12-01 HSG: Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs.
+/* Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs
+ */
 function hsgNormalizeThumbBlocks( root ) {
 	var scope = root || document;
 
@@ -745,7 +776,7 @@ function hsgNormalizeThumbBlocks( root ) {
 		}
 	} );
 
-	// Apply HSG hooks to thumbs, inners, anchors, captions.
+	/* Apply HSG hooks to thumbs, inners, anchors, captions */
 	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( function ( t ) {
 		hsgAddClass( t, 'hsg-thumb' );
 	} );
@@ -762,7 +793,7 @@ function hsgNormalizeThumbBlocks( root ) {
 		} );
 	} );
 
-	// Wrap loose sibling thumbs (non-list) together until a separator.
+	/* Wrap loose sibling thumbs (non-list) together until a separator */
 	var parents = new Set();
 	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( function ( t ) {
 		if ( t.parentElement ) {
@@ -810,8 +841,9 @@ function hsgNormalizeThumbBlocks( root ) {
 	hsgApplyTileClassToWrappers( scope );
 }
 
-// 2025-12-04 HSG: If a thumb run got wrapped outside a list (e.g. from block HTML in list items),
-// move the wrapper back into the nearest list item so bullets stay with their gallery.
+/* 2025-12-04 HSG: If a thumb run got wrapped outside a list (e.g. from block HTML in list items),
+ * move the wrapper back into the nearest list item so bullets stay with their gallery.
+ */
 function hsgRelocateWrapsIntoLists( root ) {
 	var scope = root || document;
 
@@ -868,14 +900,14 @@ function hsgRelocateWrapsIntoLists( root ) {
 	};
 
 	var findTargetItem = function ( wrap ) {
-		// 1) Nearest prior sibling that is a list or list item.
+		/* 1) Nearest prior sibling that is a list or list item */
 		var ctx = findListContext( wrap );
 		var target = deepestItemFromNode( ctx );
 		if ( target ) {
 			return target;
 		}
 
-		// 2) Walk up ancestors; at each level, inspect prior siblings for lists/items.
+		/* 2) Walk up ancestors; at each level, inspect prior siblings for lists/items. */
 		var ancestor = wrap.parentElement;
 		while ( ancestor ) {
 			var prev = ancestor.previousSibling;
@@ -897,7 +929,6 @@ function hsgRelocateWrapsIntoLists( root ) {
 				break;
 			}
 			if ( isListItem( ancestor ) ) {
-				// Already inside a list item; nothing to relocate.
 				return null;
 			}
 			ancestor = ancestor.parentElement;
@@ -912,7 +943,7 @@ function hsgRelocateWrapsIntoLists( root ) {
 			return;
 		}
 
-		// If wrapper sits directly under a list, move into the last item and mark it.
+		/* If wrapper sits directly under a list, move into the last item and mark it */
 		if ( parent.tagName === 'OL' || parent.tagName === 'UL' || parent.tagName === 'DL' ) {
 			var lastItem = parent.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
 			if ( lastItem ) {
@@ -926,7 +957,7 @@ function hsgRelocateWrapsIntoLists( root ) {
 		}
 
 		if ( !wrap.parentElement ) return;
-		// Already inside a list item/description item.
+		/* Already inside a list item/description item */
 		if ( wrap.parentElement.tagName === 'LI' || wrap.parentElement.tagName === 'DD' ) {
 			if ( wrap.parentElement.classList ) {
 				wrap.parentElement.classList.remove( 'mw-empty-elt' );
@@ -952,7 +983,8 @@ function hsgRelocateWrapsIntoLists( root ) {
 	} );
 }
 
-// Merge immediately adjacent lists of the same type so numbering/bullets continue.
+/* Merge immediately adjacent lists of the same type so numbering/bullets continue.
+ */
 function hsgMergeAdjacentLists( root ) {
 	var scope = root || document;
 	var lists = scope.querySelectorAll( 'ol, ul' );
@@ -971,7 +1003,8 @@ function hsgMergeAdjacentLists( root ) {
 	} );
 }
 
-// Move orphan HSG thumbs (not inside list items) into the adjacent list item when clearly adjacent to a list.
+/* Move orphan HSG thumbs (not inside list items) into the adjacent list item when clearly adjacent to a list.
+ */
 function hsgRelocateThumbsIntoLists( root ) {
 	var scope = root || document;
 
@@ -1016,7 +1049,7 @@ function hsgRelocateThumbsIntoLists( root ) {
 		var prevEl = nearestPrevElement( thumb );
 		var target = null;
 		if ( prevEl && ( prevEl.tagName === 'LI' || prevEl.tagName === 'DD' ) ) {
-			// Prefer nested DL within this item if present; depth limit 2.
+			/* Prefer nested DL within this item if present; depth limit 2 */
 			var nestedList = prevEl.querySelector( ':scope > dl:last-of-type, :scope > ol:last-of-type, :scope > ul:last-of-type' );
 			target = nestedList ? ( findDeepestListItem( nestedList, 2 ) || prevEl ) : prevEl;
 		} else if ( prevEl && ( prevEl.tagName === 'OL' || prevEl.tagName === 'UL' || prevEl.tagName === 'DL' ) ) {
@@ -1035,8 +1068,9 @@ function hsgRelocateThumbsIntoLists( root ) {
 	} );
 }
 
-// 2025-12-08 HSG: If an inline HSG ended up in a paragraph right after a list item,
-// move that paragraph's contents back into the last list item to keep bullets with the inline HSG.
+/* 2025-12-08 HSG: If an inline HSG ended up in a paragraph right after a list item,
+ * move that paragraph's contents back into the last list item to keep bullets with the inline HSG.
+ */
 function hsgRelocateInlineIntoLists( root ) {
 	var scope = root || document;
 
@@ -1076,8 +1110,8 @@ function hsgRelocateInlineIntoLists( root ) {
 		moveIntoLastItem( prev, p );
 	} );
 
-	// If an inline HSG ended up directly inside a list item after DOM operations,
-	// ensure it stays within the current LI instead of creating a new list.
+	/* If an inline HSG ended up directly inside a list item after DOM operations,
+	 * ensure it stays within the current LI instead of creating a new list */
 	scope.querySelectorAll( '.hsg-inline' ).forEach( function ( inline ) {
 		var li = inline.closest( 'li, dd' );
 		if ( !li ) {
@@ -1090,7 +1124,7 @@ function hsgRelocateInlineIntoLists( root ) {
 		if ( !parentList || ( parentList.tagName !== 'OL' && parentList.tagName !== 'UL' && parentList.tagName !== 'DL' ) ) {
 			return;
 		}
-		// If the inline anchor was split into its own list item, merge back into previous sibling if appropriate.
+		/* If the inline anchor was split into its own list item, merge back into previous sibling if appropriate. */
 		var prev = li.previousElementSibling;
 		if ( prev && prev.tagName === li.tagName ) {
 			while ( inline.previousSibling ) {

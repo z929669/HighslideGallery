@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Orphan thumbs now select the deepest nearby list item (up to 3 levels of mixed ol/ul/dl nesting) while keeping numbering intact
 - Caption fallback HTML now wrapped in caption spans for consistent overlay styling
 - Defensive DOM extension check to avoid fatal errors when `ext-dom` is unavailable (graceful fallback)
-
+- Keep the play control visible during autoplay so the control bar layout stays aligned.
+- Prevent keyboard navigation from disabling itself when hitting gallery boundaries.
 
 ## [2.0.0] - 2025-12-09
 - All testing for this release was done on MW v1.39.7 and PHP v8.3.26.

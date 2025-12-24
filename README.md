@@ -2,7 +2,6 @@
 
 HighslideGallery (HSG) delivers Highslide JS-powered overlays/slideshows for images and YouTube videos displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
 
-> **Status**: actively maintained  
 > **Tested**:  
 >> v2.1.0 → MediaWiki 1.39  
 >> v2.0.0 → MediaWiki 1.39  
@@ -11,30 +10,19 @@ HighslideGallery (HSG) delivers Highslide JS-powered overlays/slideshows for ima
 >> v1.0.0 → MediaWiki 1.17
 
  
-## What HSG Does (User Perspective)
-
-- **Unified gallery system** for three content types: internal wiki files (`File:` thumbnails), external images (arbitrary URLs), and YouTube videos
-- **Click-to-expand overlays** with dimmed background, centered frame, and instant open/close (no slow fade transitions by default)
-- **Galleries** can mix all three content types into one slideshow group (same `hsgid=` parameter)
-- **Navigation & close** via explicit controls, Esc key, or clicking the dimmed margin; **image clicks do not close** the overlay (prevents accidental exits)
-- **Responsive layout**: overlays fit the viewport with proper top/bottom margins; images can be zoomed full-size with panning
-- **Gallery index** ("1 of #") displayed inside the overlay so viewers know their position in the slideshow
-- **No duplicate captions** under thumbnails—HSG enforces clean markup by smart caption handling
-
- 
 ## Requirements / Compatibility
 - MediaWiki 1.39+ (ResourceLoader-only, modern hooks). Older MW versions are not supported in 2.1.0.
 
  
-## Features (2.0.0)
+## Features
 - Thumbnails displayed by default at 210px with ability to size as needed, but inline links are optional using `inline=1`
-- Zoom toggle (full/fit) with pan inside the HSG
+- Toggle max resolution of images with panning - allows inspection of the entire image at native resolution, no matter the device screen size.
 - Group images and YouTube videos into a single HSG gallery via `hsgid`.
 - Support for opotional thumbnail layouts including justified tiling and clean arrangement in ordered/unordered lists
 - Robust data model provides unique styling classes, maximizing compatibility with Mediawiki core media-handling and other media extensions.
 - Thumb captions are default but optional with graceful caption fallbacks also used for image `alt` text.
 - ResourceLoader-exposed i18n strings for hover instructions, control tooltips, loading text, and member counter
-- Custom `LocalSettings.php` parameter allows positioning controls at bottom of viewport (default) or over the image expander (optional) inside the HSG overlay.
+- Custom `LocalSettings.php` parameter allows positioning controls at bottom of viewport (default) or over the image expander (optional).
 - Mobile (touch/tap) support with responsive layouts
 
  
@@ -144,7 +132,7 @@ Parameters (named; positional `source` is also accepted):
 | width={{{width|}}}
 | title={{{title|}}}
 | caption={{{caption|}}}
-| nocaption={{nocaption|0}}}
+| nocaption={{{nocaption|0}}}
 | inline={{{inline|0}}}
 | linktext={{{linktext|}}}
 }} }}
@@ -178,7 +166,7 @@ When multiple media items share the same `hsgid=`, they form a single slideshow 
 - **Note**: The extension no longer accepts `[[File:…|hsgid=…]]` syntax to invoke HSG; use `{{#hsgimg:source=File:…|hsgid=…}}` instead. Legacy `hsgid=/highslide=` prefixes in captions are parsed for backward compatibility but do not activate HSG on native file links.
 
  
-## What You Can Rely On (Guarantees)
+## Guarantees
 
 - **Image clicks do not close overlays** — Viewers must use the close button, press Esc, or click the dimmed margin to close. This prevents accidental exits when interacting with the image.
 - **Clean HTML** — HSG prevents malformed captions and ensures consistent markup. External and internal images both get proper `alt` text and title attributes.
@@ -186,10 +174,10 @@ When multiple media items share the same `hsgid=`, they form a single slideshow 
 - **Gallery index** — When viewing a multi-image gallery, the overlay displays "1 of N" so viewers know their position.
 
  
-## Known Limitations & Future Enhancements
+## Limitations
 
 - **Zoom UI controls** — The zoom helper exists and works programmatically, but manual UI buttons (zoom in/zoom out) are not wired into the overlay, nor are there plans to do so unless the need arises. Possible workaround: use keyboard or browser zoom.
-- **Caption HTML detection** — HSG uses a simple heuristic to detect HTML in captions. If captions have unusual formats, they may not render as expected. For complex HTML, consider using the template approach.
+- **Caption HTML detection** — HSG uses a simple heuristic to detect HTML in captions. If captions have unusual formats, they may not render as expected. For complex HTML, consider using a template.
 
  
 ## Configuration
@@ -209,15 +197,15 @@ Defaults require no manual changes.
  
 ## Customization via JS and CSS Variables
 
-HSG exposes several convenience variables and CSS custom properties (CSS variables) that you can adjust in your custom styles or LocalSettings without modifying extension code. This prevents conflicts and makes updates safe.
+HSG exposes several convenience variables and CSS custom properties (CSS variables) that can be adjusted via custom styles or LocalSettings without modifying extension code. This prevents conflicts and makes updates safe.
 
 ### JavaScript Configuration (`modules/highslide.cfg.js`)
 
-The following `hs.*` properties are exposed and can be overridden in your custom JS:
+The following `hs.*` properties are exposed and can be overridden via custom JS:
 
 **Overlay behavior:**
 - `hs.align` (default: `'center'`) — Horizontal alignment of the overlay
-- `hs.marginTop`, `hs.marginBottom`, `hs.marginLeft`, `hs.marginRight` (defaults: 40, 40, 30, 30 px) — Viewport margins around overlay
+- `hs.marginTop`, `hs.marginBottom`, `hs.marginLeft`, `hs.marginRight` (px) — Viewport margins around overlay
 - `hs.dimmingOpacity` (default: 0.75) — Opacity of the background dimmer (0–1)
 - `hs.closeOnClick` (default: false) — Whether clicking the image closes the overlay (HSG forces false to prevent accidental closes)
 - `hs.allowSizeReduction` (default: true) — Allow shrinking overlays to fit viewport
@@ -225,28 +213,28 @@ The following `hs.*` properties are exposed and can be overridden in your custom
 - `hs.outlineType` (default: null) — Outline style; HSG uses CSS-driven styling
 
 **Transitions (can be toggled for different effects):**
-- `hs.fadeInOut` (default: false) — Enable fade transitions
+- `hs.restoreDuration`	(d)efault: 250) — Duration of zoom out on closing the overlay
 - `hs.expandDuration`, `hs.restoreDuration` (default: 0 ms) — Animation timing
 - `hs.transitions` (default: []) — Array of transition effects; try `['expand', 'crossfade']` for classic behavior
+- `hs.transitionDuration`	(d)efault: 250) — duration of ANY enabled transitions/animations of images, captions, or overlay
 
 **Gallery display:**
 - `hs.numberPosition` (default: `'caption'`) — Where "1 of N" appears (`'caption'`, `'top-left'`, `'bottom-left'`, etc.)
 - `hs.wrapperClassName` (default: `'hsg-frame floating-caption'`) — CSS classes applied to the overlay wrapper
 
-**To override these**, add JavaScript to your LocalSettings.php or custom JS file *after* HighslideGallery is loaded:
+**To override**, add JavaScript to LocalSettings.php or custom JS file *after* HighslideGallery is loaded:
 ```javascript
 // Example: Increase margins, enable fade transitions
 if ( typeof hs !== 'undefined' ) {
     hs.marginTop = 60;
     hs.marginBottom = 60;
-    hs.fadeInOut = true;
     hs.expandDuration = 200;
 }
 ```
 
 ### CSS Custom Properties (`modules/highslide.override.css`)
 
-The following CSS variables are defined in `:root` and can be overridden in your custom CSS stylesheet:
+The following CSS variables are defined in `:root` and can be overridden via custom CSS stylesheet:
 
 **Colors:**
 - `--hsg-caption-number` (default: #777) — Gallery index text ("1 of 5") color
@@ -271,17 +259,7 @@ The following CSS variables are defined in `:root` and can be overridden in your
 - `--hsg-ts-border` (default: #ff9012) — Thumbstrip (slideshow navigation) border color
 - `--hsg-ts-border-hover` (default: #aaa) — Thumbstrip border color on hover
 
-**To override these**, add CSS to your custom stylesheet:
-```css
-:root {
-    --hsg-dimmer: rgba(0, 0, 0, 0.5);  /* Lighter dimmer */
-    --hsg-caption-caption: #ffcc00;     /* Yellow captions */
-    --hsg-frame-bg: #1a1a1a;            /* Dark gray frame */
-    --hsg-tile-min: 150px;              /* Smaller tiles */
-}
-```
-
-### What Variables Should NOT Be Modified
+### Beware modifications to the following
 
 - `hs.graphicsDir` — Set this in `highslide.cfg.js` if `$wgExtensionAssetsPath` is custom (see Installation section)
 - `hs.wrapperClassName` — HSG requires `'hsg-frame'` for proper styling; modify CSS instead of this property
