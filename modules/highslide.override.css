@@ -3,7 +3,7 @@
  * displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail
  * or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to
  * expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
- * 
+ *
  * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -35,10 +35,10 @@
 	--hsg-caption-thumb-caption: #b0b0b0;
 	--hsg-caption-thumb-text: #777;
 	--hsg-caption-thumb-title: #b0b0b0;
-	--hsg-dimmer: rgba(0, 0, 0, 0.75);
+	--hsg-dimmer: rgb(0 0 0 / 75%);
 	--hsg-frame-bg: #000;
 	--hsg-frame-border: #888;
-	--hsg-frame-shadow: rgba(0, 0, 0, 0.9);
+	--hsg-frame-shadow: rgb(0 0 0 / 90%);
 	--hsg-tile-gap: 12px;
 	--hsg-tile-min: 210px;
 	--hsg-ts-border: #ff9012;
@@ -60,6 +60,7 @@
 /* -------------------------------------------------------------------------
  * Frame & caption
  * ------------------------------------------------------------------------- */
+
 /* Base frame used by HSG (images & YouTube) */
 .highslide-wrapper.hsg-frame {
 	left: 50% !important;
@@ -102,6 +103,7 @@
 }
 
 /* Ensure the dimmer covers the viewport in Firefox */
+/* stylelint-disable-next-line at-rule-no-vendor-prefix */
 @-moz-document url-prefix() {
 	.highslide-dimming.highslide-viewport-size {
 		position: fixed;
@@ -134,8 +136,8 @@
 }
 
 /* Close control hover */
-.close:not(:disabled):not(.disabled):hover,
-.close:not(:disabled):not(.disabled):focus {
+.close:not(:disabled, .disabled):hover,
+.close:not(:disabled, .disabled):focus {
 	opacity: 0.95;
 }
 
@@ -144,7 +146,7 @@
 	display: block;
 	width: 2.0rem;
 	height: 2.0rem;
-	background: url(graphics/close.png) no-repeat 50% 50%;
+	background: url("graphics/close.png") no-repeat 50% 50%;
 	background-size: 2.0rem;
 	text-indent: -9999px;
 	overflow: hidden;
@@ -153,7 +155,7 @@
 /* Prevent bottom-clipping of text-based controls */
 .text-controls.highslide-controls,
 .text-controls .highslide-controls {
-	padding: 0 10px 0;
+	padding: 0 10px;
 }
 
 .text-controls .highslide-controls a span,
@@ -204,8 +206,9 @@
 
 .text-controls .highslide-controls a.disabled {
 	opacity: 0.75;
-	filter: contrast(30%);
+	/* stylelint-disable-next-line property-no-vendor-prefix */
 	-webkit-filter: contrast(30%);
+	filter: contrast(30%);
 	background-position: center center !important;
 }
 
@@ -343,7 +346,7 @@
 		url("graphics/image-lite.svg") center left no-repeat,
 		url("graphics/image-lite.svg") center right no-repeat;
 	background-size: 1rem 1rem;
-	padding: 0 1.1rem 0 1.1rem;
+	padding: 0 1.1rem;
 	margin: 0 0.1rem 0 0.3rem;
 }
 
@@ -353,8 +356,8 @@ a.link-youtube:not(.hsg-ytb-thumb) {
 		url("graphics/youtube.svg") center left no-repeat,
 		url("graphics/youtube.svg") center right no-repeat;
 	background-size: 1rem 1rem;
-	padding: 0 1.1rem 0 1.1rem;
-	margin: 0 0.1rem 0 0.1rem;
+	padding: 0 1.1rem;
+	margin: 0 0.1rem;
 }
 
 /* YouTube popup shell */

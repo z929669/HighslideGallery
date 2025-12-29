@@ -1,0 +1,30 @@
+# HighslideGallery Release Manifest
+# Files/folders included in MediaWiki extension package (EXCLUDE dev/meta from release)
+
+# Core extension files
+HighslideGallery.body.php
+extension.json
+composer.json
+
+# Documentation (for MediaWiki repo)
+README.md
+COPYING.md
+CHANGELOG.md
+
+# i18n (translation strings)
+i18n/en.json
+i18n/qqq.json
+i18n/HighslideGallery.i18n.magic.php
+
+# JavaScript & CSS (Highslide library + config + overrides)
+modules/highslide-full.js
+modules/highslide.cfg.js
+modules/highslide.css
+modules/highslide.override.css
+modules/graphics/*
+
+# EXCLUDE (do not include in release):
+# - .phpcs.xml, eslint.config.js, .stylelintrc.json, .prettierrc.json (dev linting/formatting config)
+# - package.json (dev-only; Node.js dependencies for local development only)
+# - .github/, .vscode/, .meta/ (internal/reference)
+# - node_modules/, vendor/ (build artifacts)

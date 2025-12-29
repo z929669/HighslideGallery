@@ -1,21 +1,32 @@
 {
 	"name": "HighslideGallery",
-	"version": "2.1.0",
+	"version": "2.1.1",
 	"author": ["Brian McCloskey", "David Van Winkle", "Step Modifications, Inc."],
-	"license-name": "GPL-2.0",
+	"license-name": "GPL-2.0-only",
 	"url": "https://www.mediawiki.org/wiki/Extension:HighslideGallery",
 	"descriptionmsg": "hsg-desc",
 	"type": "parserhook",
-	"requires": { "MediaWiki": ">= 1.39.0" },
-	"MessagesDirs": { "HighslideGallery": [ "i18n" ] },
-	"ExtensionMessagesFiles": { "HighslideGalleryMagic": "i18n/HighslideGallery.i18n.magic.php" },
-	"AutoloadClasses": { "HighslideGallery": "HighslideGallery.body.php" },
+	"requires": {
+		"MediaWiki": ">= 1.39.0"
+	},
+	"MessagesDirs": {
+		"HighslideGallery": ["i18n"]
+	},
+	"ExtensionMessagesFiles": {
+		"HighslideGalleryMagic": "i18n/HighslideGallery.i18n.magic.php"
+	},
+	"AutoloadClasses": {
+		"HighslideGallery": "HighslideGallery.body.php"
+	},
+	"ResourceFileModulePaths": {
+		"localBasePath": "modules",
+		"remoteExtPath": "HighslideGallery/modules"
+	},
 	"ResourceModules": {
 		"ext.highslideGallery": {
-			"version": "20251223.1",
-			"scripts": [ "highslide-full.js", "highslide.cfg.js" ],
-			"styles": [ "highslide.css", "highslide.override.css" ],
-			"dependencies": [ "jquery", "mediawiki.util" ],
+			"scripts": ["highslide-full.js", "highslide.cfg.js"],
+			"styles": ["highslide.css", "highslide.override.css"],
+			"dependencies": ["jquery", "mediawiki.util"],
 			"messages": [
 				"hsg-hover-instructions",
 				"hsg-loading-text",
@@ -33,12 +44,9 @@
 			"position": "top"
 		}
 	},
-	"ResourceFileModulePaths": {
-		"localBasePath": "modules",
-		"remoteExtPath": "HighslideGallery/modules"
-	},
+	"config_prefix": "wg",
 	"config": {
-		"wgHSGControlsPreset": {
+		"HSGControlsPreset": {
 			"value": "classic",
 			"description": "HighslideGallery control + thumbstrip layout preset (e.g. classic, stacked-top).",
 			"public": true

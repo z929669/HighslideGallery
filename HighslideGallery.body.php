@@ -4,7 +4,7 @@
  * displayed as thumbnails or inline links on the page with titles and captions. Clicking a HSG thumbnail
  * or link opens the image or video in an interactive overlay auto-sized to the viewport with ability to
  * expand to full size with panning. See [this example](https://stepmodifications.org/wikidev/Template:Hsg).
- * 
+ *
  * @Copyright (C) 2012 Brian McCloskey, David Van Winkle, Step Modifications, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -110,7 +110,7 @@ class HighslideGallery {
 		Config $config
 	): bool {
 		$vars['wgHSGControlsPreset'] = self::getControlsPreset();
-		
+
 		return true;
 	}
 
@@ -188,14 +188,14 @@ class HighslideGallery {
 		return in_array( $normalized, [ '1', 'true', 'yes', 'y' ], true );
 	}
 
-	/* 
-	 * Escape a string for use in HTML attributes consistently 
+	/*
+	 * Escape a string for use in HTML attributes consistently
 	 */
 	private static function escAttr( $val ): string {
 		return htmlspecialchars( (string)$val, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 	}
 
-	/* 
+	/*
 	 * Generate a cryptographically-secure id segment, with safe fallbacks
 	 */
 	private static function generateId( int $bytes = 8 ): string {
@@ -206,7 +206,8 @@ class HighslideGallery {
 				if ( function_exists( 'openssl_random_pseudo_bytes' ) ) {
 					return bin2hex( openssl_random_pseudo_bytes( $bytes ) );
 				}
-			} catch ( \Throwable $e2 ) { }
+			} catch ( \Throwable $e2 ) {
+			}
 			# Last resort: deterministic but unlikely collision for modest usage
 			return substr( hash( 'sha256', uniqid( (string)microtime( true ), true ) ), 0, $bytes * 2 );
 		}
@@ -520,8 +521,8 @@ class HighslideGallery {
 		# ----------------------------------------------------------------------
 		# 4. Gallery id (optional)
 		# ----------------------------------------------------------------------
-		$groupId = self::extractGroupId( 
-			isset( $attributes['hsgid'] ) ? $attributes['hsgid'] 
+		$groupId = self::extractGroupId(
+			isset( $attributes['hsgid'] ) ? $attributes['hsgid']
 			: ( isset( $attributes['id'] ) ? $attributes['id'] : null )
 		);
 
@@ -770,7 +771,7 @@ class HighslideGallery {
 			$width = (int)$attributes['width'];
 			unset( $attributes['width'] );
 		}
-		
+
 		# Determine inline mode:
 		# - Tags (<hsyoutube>, <hsgytb>): default inline text
 		# - Parser function (#hsgytb): default thumbnail
@@ -1112,7 +1113,8 @@ class HighslideGallery {
 					try {
 						$url = $file->getUrl();
 						$a->setAttribute( 'href', (string)$url );
-					} catch ( Exception $e ) { }
+					} catch ( Exception $e ) {
+					}
 				}
 			}
 

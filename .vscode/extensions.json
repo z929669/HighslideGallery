@@ -1,0 +1,12 @@
+{
+	"recommendations": [
+		"devsense.phptools-vscode",
+		"devsense.intelli-php-vscode",
+		"dbaeumer.vscode-eslint",
+		"stylelint.vscode-stylelint",
+		"esbenp.prettier-vscode",
+		"github.copilot",
+		"github.copilot-chat",
+		"openai.chatgpt"
+	]
+}

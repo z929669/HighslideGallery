@@ -1,0 +1,144 @@
+{
+	"chatgpt.openOnStartup": true,
+
+	// =========================================================================
+	// PHP (DEVSENSE PHP Tools)
+	// =========================================================================
+	"php.version": "8.3",
+	"php.suggest.basic": true,
+	"php.validate.enable": true,
+	"php.validate.run": "onSave",
+	"php.format.indentSize": 4,
+	"php.format.insertSpaces": false,
+
+	// PHP CodeSniffer (MediaWiki standards)
+	// Run: composer require --dev mediawiki/mediawiki-codesniffer
+	"php.codeSnifferEnable": true,
+	"php.codeSnifferStandard": ".phpcs.xml",
+	"php.lintOnSave": true,
+
+	// =========================================================================
+	// JavaScript (ESLint - Microsoft extension)
+	// =========================================================================
+	"eslint.enable": true,
+	"eslint.validate": ["javascript", "javascriptreact"],
+	"eslint.format.enable": true,
+	"eslint.lintTask.enable": true,
+	"eslint.options": {
+		"configFile": "eslint.config.js"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[javascriptreact]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+
+	// =========================================================================
+	// CSS / Stylelint (Stylelint extension)
+	// =========================================================================
+	"css.validate": false,
+	"less.validate": false,
+	"[css]": {
+		"editor.defaultFormatter": "stylelint.vscode-stylelint",
+		"editor.formatOnSave": true
+	},
+	"stylelint.enable": true,
+	"stylelint.configFile": ".stylelintrc.json",
+
+	// =========================================================================
+	// EditorConfig (Cross-editor consistency)
+	// =========================================================================
+	"editorconfig.enable": true,
+
+	// =========================================================================
+	// Prettier (JSON, Markdown, YAML)
+	// =========================================================================
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true,
+		"editor.formatOnPaste": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[markdown]": {
+		"editor.formatOnSave": false,
+		"editor.wordWrap": "on",
+		"editor.trimAutoWhitespace": false
+	},
+	"prettier.useTabs": true,
+	"prettier.tabWidth": 1,
+	"prettier.semi": true,
+	"prettier.singleQuote": true,
+	"prettier.trailingComma": "es5",
+
+	// =========================================================================
+	// Editor Behavior (Format on Save, Trimming)
+	// =========================================================================
+	"editor.formatOnSave": true,
+	"editor.formatOnPaste": false,
+	"editor.trimAutoWhitespace": true,
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"editor.indentSize": 4,
+	"files.trimTrailingWhitespace": true,
+	"files.insertFinalNewline": true,
+	"files.trimFinalNewlines": true,
+
+	// =========================================================================
+	// File Associations
+	// =========================================================================
+	"files.associations": {
+		".eslintrc.json": "jsonc",
+		".stylelintrc.json": "jsonc",
+		".phpcs.xml": "xml"
+	},
+
+	// =========================================================================
+	// Search/Exclude
+	// =========================================================================
+	"files.exclude": {
+		"**/.git": true,
+		"**/node_modules": true,
+		"**/vendor": true,
+		"**/.DS_Store": true,
+		"*.swp": true
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/vendor": true,
+		".git": true
+	},
+
+	// =========================================================================
+	// Git (minimal; you use GitKraken)
+	// =========================================================================
+	"git.ignoreLimitWarning": true,
+	"git.autofetch": false,
+
+	// =========================================================================
+	// GitLens (Complements GitKraken with inline editor context)
+	// =========================================================================
+	"gitlens.gitkraken.cli.integration.enabled": true,
+	"gitlens.gitkraken.activeOrganizationId": "Step Modifications",
+	"gitlens.currentLineBlame": true,
+	"gitlens.codeLens.enabled": true,
+
+	// =========================================================================
+	// Copilot/Agent & Browser Tools
+	// =========================================================================
+	"github.copilot.enable": {
+		"*": true,
+		"plaintext": false,
+		"markdown": true
+	},
+	"github.copilot.advanced": {
+		"authProvider": "github"
+	},
+	// Microsoft Edge Tools: DOM inspection/sharing without DevTools copy-paste
+	"edge.openEdgeDevTools": true
+}

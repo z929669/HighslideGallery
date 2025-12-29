@@ -1,0 +1,37 @@
+# EditorConfig is supported by VS Code (via extension or built-in)
+# Provides consistent indentation, line endings, and whitespace across all files
+# https://editorconfig.org/
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# PHP files
+[*.php]
+indent_style = tab
+indent_size = 4
+
+# JavaScript/JSON files
+[*.{js,json,jsonc}]
+indent_style = tab
+indent_size = 4
+
+# CSS/LESS files
+[*.{css,less}]
+indent_style = tab
+indent_size = 4
+
+# Markdown (preserve formatting)
+[*.md]
+trim_trailing_whitespace = false
+insert_final_newline = true
+
+# YAML
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2

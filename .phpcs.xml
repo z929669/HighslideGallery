@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<ruleset name="HighslideGallery">
+	<!--
+		HighslideGallery PHP CodeSniffer Configuration
+		Target: MediaWiki 1.39+ (compatible with 1.43 LTS and beyond)
+
+		This ruleset enforces MediaWiki's coding standards for PHP.
+		Install: composer require --dev mediawiki/mediawiki-codesniffer
+		Run: vendor/bin/phpcs --standard=.phpcs.xml HighslideGallery.body.php
+
+		Version Notes:
+		- MW 1.39–1.42: MediaWiki coding standards as of Dec 2025
+		- MW 1.43+ LTS: Same standards; no breaking changes expected
+		  (Update this file if new MW versions introduce stricter rules)
+	-->
+
+	<description>MediaWiki coding standards for HighslideGallery</description>
+
+	<!-- Use MediaWiki ruleset as base -->
+	<rule ref="vendor/mediawiki/mediawiki-codesniffer/MediaWiki">
+		<!-- Exclude rules that conflict with HSG-specific conventions -->
+		<!-- (None currently; remove if future MediaWiki rules conflict with HSG patterns) -->
+	</rule>
+
+	<!-- HSG-specific customizations -->
+	<rule ref="MediaWiki.Commenting.FunctionComment">
+		<properties>
+			<property name="checkReturn" value="true"/>
+			<property name="checkThrows" value="true"/>
+		</properties>
+	</rule>
+
+	<!-- File scope -->
+	<file>HighslideGallery.body.php</file>
+
+	<!-- Directories to exclude -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/modules/highslide-full.js</exclude-pattern>
+
+	<!-- Line length is soft-capped at 120 chars (MediaWiki guideline) -->
+	<rule ref="Generic.Files.LineLength">
+		<properties>
+			<property name="lineLimit" value="120"/>
+			<property name="absoluteLineLimit" value="120"/>
+		</properties>
+	</rule>
+
+</ruleset>

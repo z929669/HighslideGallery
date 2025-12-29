@@ -29,8 +29,8 @@ if ( typeof window !== 'undefined' && typeof hs !== 'undefined' ) {
  * Core Highslide behaviour
  * ------------------------------------------------------------------------- */
 
-hs.graphicsDir = mw.config.get( 'wgExtensionAssetsPath' ) +
-	'/HighslideGallery/modules/graphics/';
+hs.graphicsDir = `${mw.config.get( 'wgExtensionAssetsPath' ) 
+}/HighslideGallery/modules/graphics/`;
 
 hs.showCredits			= false;
 
@@ -45,7 +45,7 @@ hs.marginLeft			= 30;
 hs.marginRight			= 30;
 
 //hs.transitions		= [ 'expand', 'crossfade' ]; // overlay zoom in/out on open/close only; 'crossfade' image transitions; thumbstrip/controls static
-hs.transitions			= [ 'fade', 'crossfade' ]; // overlay fade in/out on open/close only; 'crossfade' image transitions; thumbstrip/controls static
+hs.transitions			= ['fade', 'crossfade']; // overlay fade in/out on open/close only; 'crossfade' image transitions; thumbstrip/controls static
 hs.transitionDuration	= 0; // Default: 250; duration of ANY enabled transitions/animations of images, captions, or overlay
 //hs.expandDuration		= 0; // Default: 250; duration of image transitions zoom in/out
 //hs.restoreDuration	= 0; // Default: 250; duration of zoom out on closing the overlay
@@ -69,26 +69,26 @@ var HSG_CONTROLS_PRESET = ( typeof mw !== 'undefined' && typeof mw.config !== 'u
 	? ( mw.config.get( 'wgHSGControlsPreset' ) || 'classic' )
 	: 'classic';
 HSG_CONTROLS_PRESET = String( HSG_CONTROLS_PRESET ).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-var HSG_PRESET_CLASS = 'hsg-preset-' + HSG_CONTROLS_PRESET;
+var HSG_PRESET_CLASS = `hsg-preset-${  HSG_CONTROLS_PRESET}`;
 if ( typeof hs.wrapperClassName === 'string' ) {
-	hs.wrapperClassName = hs.wrapperClassName + ' ' + HSG_PRESET_CLASS;
+	hs.wrapperClassName = `${hs.wrapperClassName  } ${  HSG_PRESET_CLASS}`;
 } else {
-	hs.wrapperClassName = 'hsg-frame floating-caption ' + HSG_PRESET_CLASS;
+	hs.wrapperClassName = `hsg-frame floating-caption ${  HSG_PRESET_CLASS}`;
 }
 /* Ensure any Highslide-created viewport containers also get the preset class */
 if ( typeof MutationObserver !== 'undefined' ) {
 	(function () {
-		var mo = new MutationObserver( function ( mutations ) {
-			mutations.forEach( function ( m ) {
-				m.addedNodes && m.addedNodes.forEach && m.addedNodes.forEach( function ( node ) {
+		const mo = new MutationObserver( ( mutations ) => {
+			mutations.forEach( ( m ) => {
+				m.addedNodes && m.addedNodes.forEach && m.addedNodes.forEach( ( node ) => {
 					if ( node && node.nodeType === 1 ) {
 						if ( node.classList && node.classList.contains( 'highslide-viewport' ) ) {
 							node.classList.add( HSG_PRESET_CLASS );
 						}
 						/* Also catch wrapper elements created under the viewport */
-						var viewports = node.querySelectorAll && node.querySelectorAll( '.highslide-viewport' );
+						const viewports = node.querySelectorAll && node.querySelectorAll( '.highslide-viewport' );
 						if ( viewports && viewports.length ) {
-							Array.prototype.forEach.call( viewports, function ( vp ) { vp.classList.add( HSG_PRESET_CLASS ); } );
+							Array.prototype.forEach.call( viewports, ( vp ) => { vp.classList.add( HSG_PRESET_CLASS ); } );
 						}
 					}
 				} );
@@ -119,13 +119,13 @@ function hsgAttachTouchPan( exp ) {
 	if ( !HSG_IS_COARSE_POINTER || !exp || exp._hsgTouchPanAttached ) {
 		return;
 	}
-	var el = exp.content || exp.wrapper;
+	const el = exp.content || exp.wrapper;
 	if ( !el ) {
 		return;
 	}
 
-	var sendMouse = function ( type, touch, target ) {
-		var evt = new MouseEvent( type, {
+	const sendMouse = function ( type, touch, target ) {
+		const evt = new MouseEvent( type, {
 			bubbles: true,
 			cancelable: true,
 			clientX: touch.clientX,
@@ -137,9 +137,9 @@ function hsgAttachTouchPan( exp ) {
 		( target || el ).dispatchEvent( evt );
 	};
 
-	var touchId = null;
-	var move, end;
-	var start = function ( e ) {
+	let touchId = null;
+	let move, end;
+	const start = function ( e ) {
 		if ( !e.touches || e.touches.length !== 1 || !e.touches[0] ) {
 			return;
 		}
@@ -150,8 +150,8 @@ function hsgAttachTouchPan( exp ) {
 			if ( !ev.touches || ev.touches.length === 0 ) {
 				return;
 			}
-			for ( var i = 0; i < ev.touches.length; i++ ) {
-				var t = ev.touches[i];
+			for ( let i = 0; i < ev.touches.length; i++ ) {
+				const t = ev.touches[i];
 				if ( t && t.identifier === touchId ) {
 					ev.preventDefault();
 					sendMouse( 'mousemove', t, document );
@@ -160,9 +160,9 @@ function hsgAttachTouchPan( exp ) {
 			}
 		};
 		end = function ( evEnd ) {
-			var t2 = null;
+			let t2 = null;
 			if ( evEnd.changedTouches && evEnd.changedTouches.length ) {
-				for ( var j = 0; j < evEnd.changedTouches.length; j++ ) {
+				for ( let j = 0; j < evEnd.changedTouches.length; j++ ) {
 					if ( evEnd.changedTouches[j].identifier === touchId ) {
 						t2 = evEnd.changedTouches[j];
 						break;
@@ -236,25 +236,25 @@ if ( hs.Expander && hs.Expander.prototype && !hs.Expander.prototype._hsgPatchedO
 		if ( !overlay || overlay.relativeTo !== 'viewport' ) {
 			return;
 		}
-		var vv = window.visualViewport;
+		const vv = window.visualViewport;
 		if ( !vv ) {
 			return;
 		}
-		var pos = overlay.position || '';
-		var offX = overlay.offsetX || 0;
+		const pos = overlay.position || '';
+		const offX = overlay.offsetX || 0;
 
 		if ( /center$/.test( pos ) ) {
-			var leftPx = vv.pageLeft + ( vv.width - overlay.offsetWidth ) / 2 + offX;
-			overlay.style.left = leftPx + 'px';
+			const leftPx = vv.pageLeft + ( vv.width - overlay.offsetWidth ) / 2 + offX;
+			overlay.style.left = `${leftPx  }px`;
 			overlay.style.right = 'auto';
 			overlay.style.marginLeft = '0';
 		} else if ( /right$/.test( pos ) ) {
-			var leftRight = vv.pageLeft + vv.width - overlay.offsetWidth - offX;
-			overlay.style.left = leftRight + 'px';
+			const leftRight = vv.pageLeft + vv.width - overlay.offsetWidth - offX;
+			overlay.style.left = `${leftRight  }px`;
 			overlay.style.right = 'auto';
 			overlay.style.marginLeft = '0';
 		} else if ( /left$/.test( pos ) ) {
-			overlay.style.left = ( vv.pageLeft + offX ) + 'px';
+			overlay.style.left = `${vv.pageLeft + offX   }px`;
 			overlay.style.right = 'auto';
 			overlay.style.marginLeft = '0';
 		}
@@ -269,9 +269,9 @@ hs.lang = hs.lang || {};
 
 function hsgMsg( key, fallback ) {
 	if ( typeof mw !== 'undefined' && typeof mw.message === 'function' ) {
-		var m = mw.message( key );
+		const m = mw.message( key );
 		if ( m && typeof m.exists === 'function' && m.exists() ) {
-			var txt = m.text();
+			const txt = m.text();
 			if ( typeof txt === 'string' && txt.trim() !== '' ) {
 				return txt;
 			}
@@ -343,10 +343,10 @@ var hsgControlLayoutPresets = {
 };
 
 function hsgSelectControlLayoutPreset() {
-	var presetName = HSG_CONTROLS_PRESET || 'classic';
+	let presetName = HSG_CONTROLS_PRESET || 'classic';
 
 	if ( typeof mw !== 'undefined' && mw.config && typeof mw.config.get === 'function' ) {
-		var cfgPreset = mw.config.get( 'wgHSGControlsPreset' );
+		const cfgPreset = mw.config.get( 'wgHSGControlsPreset' );
 		if ( typeof cfgPreset === 'string' && cfgPreset.trim() !== '' ) {
 			presetName = cfgPreset.trim().toLowerCase().replace( /[\s_]+/g, '-' );
 		}
@@ -356,9 +356,9 @@ function hsgSelectControlLayoutPreset() {
 		presetName = 'classic';
 	}
 
-	var preset = hsgControlLayoutPresets[ presetName ];
-	var overlayOptions = Object.assign( {}, preset.overlayOptions || {} );
-	var thumbstripOptions = preset.thumbstrip
+	const preset = hsgControlLayoutPresets[ presetName ];
+	const overlayOptions = Object.assign( {}, preset.overlayOptions || {} );
+	const thumbstripOptions = preset.thumbstrip
 		? Object.assign( {}, preset.thumbstrip )
 		: null;
 
@@ -395,7 +395,7 @@ function hsgConfigureImageSlideshow() {
 	}
 	hs._hsgConfiguredSlideshow = true;
 
-	var hsgControlsPreset = hsgSelectControlLayoutPreset();
+	const hsgControlsPreset = hsgSelectControlLayoutPreset();
 
 	hs.addSlideshow( {
 		repeat: false,	// prev/next looping
@@ -445,7 +445,7 @@ if (hs.Slideshow && hs.Slideshow.prototype && !hs.Slideshow.prototype._hsgPatche
 	hs.Slideshow.prototype._hsgOrigPause = hs.Slideshow.prototype.pause;
 
 	hs.Slideshow.prototype.play = function ( wait ) {
-		var res = typeof this._hsgOrigPlay === 'function'
+		const res = typeof this._hsgOrigPlay === 'function'
 			? this._hsgOrigPlay.call( this, wait )
 			: undefined;
 
@@ -460,7 +460,7 @@ if (hs.Slideshow && hs.Slideshow.prototype && !hs.Slideshow.prototype._hsgPatche
 	};
 
 	hs.Slideshow.prototype.pause = function () {
-		var res = typeof this._hsgOrigPause === 'function'
+		const res = typeof this._hsgOrigPause === 'function'
 			? this._hsgOrigPause.call( this )
 			: undefined;
 
@@ -481,13 +481,13 @@ if (typeof hs.previousOrNext === 'function' && !hs._hsgPatchedPreviousOrNext) {
 	hs._hsgOrigPreviousOrNext = hs.previousOrNext;
 
 	hs.previousOrNext = function ( el, op ) {
-		var exp = hs.getExpander( el );
+		const exp = hs.getExpander( el );
 		if ( !exp ) {
 			return false;
 		}
 
-		var adj = exp.getAdjacentAnchor( op );
-		var result = hs.transit( adj, exp );
+		const adj = exp.getAdjacentAnchor( op );
+		const result = hs.transit( adj, exp );
 
 		if ( !adj ) {
 			/* Re-attach the key listener so arrow/space handling stays active */
@@ -511,9 +511,9 @@ hs.addSlideshow( {
 /* Prefer image content for thumbstrip items (handles inline text links with hidden img proxies). */
 hs.stripItemFormatter = function ( anchor ) {
 	if ( anchor && anchor.querySelector ) {
-		var img = anchor.querySelector( 'img' );
+		const img = anchor.querySelector( 'img' );
 		if ( img && img.src ) {
-			return '<img src="' + img.src + '" alt="" />';
+			return `<img src="${  img.src  }" alt="" />`;
 		}
 	}
 	return anchor ? anchor.innerHTML : '';
@@ -549,25 +549,25 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 		return true;
 	}
 
-	var opts = {};
-	var source = (baseOptions && typeof baseOptions === 'object')
+	const opts = {};
+	const source = (baseOptions && typeof baseOptions === 'object')
 		? baseOptions
 		: window.hsgVideoOptions;
 
 	if ( source ) {
-		for ( var k in source ) {
+		for ( const k in source ) {
 			if ( Object.prototype.hasOwnProperty.call( source, k ) ) {
 				opts[k] = source[k];
 			}
 		}
 	}
 
-	var caption = anchor.getAttribute( 'data-hsg-html' ) || anchor.getAttribute( 'data-hsg-caption' ) || anchor.getAttribute( 'title' );
+	const caption = anchor.getAttribute( 'data-hsg-html' ) || anchor.getAttribute( 'data-hsg-caption' ) || anchor.getAttribute( 'title' );
 	if ( caption ) {
 		opts.captionText = caption;
 	}
 
-	var hsgId = anchor.getAttribute( 'data-hsgid' ) || anchor.getAttribute( 'data-hsg-group' );
+	const hsgId = anchor.getAttribute( 'data-hsgid' ) || anchor.getAttribute( 'data-hsg-group' );
 	if ( hsgId ) {
 		opts.slideshowGroup = hsgId;
 	}
@@ -578,15 +578,15 @@ window.hsgOpenYouTube = function ( anchor, baseOptions ) {
 	}
 
 	/* Viewport-aware sizing (16:9 best fit within HS margins) */
-	var page = hs.getPageSize ? hs.getPageSize() : { width: 0, height: 0 };
-	var marginW = (hs.marginLeft || 0) + (hs.marginRight || 0);
-	var marginH = (hs.marginTop || 0) + (hs.marginBottom || 0);
-	var maxW = Math.max(320, page.width - marginW - 20);
-	var maxH = Math.max(180, page.height - marginH - 20);
+	const page = hs.getPageSize ? hs.getPageSize() : { width: 0, height: 0 };
+	const marginW = (hs.marginLeft || 0) + (hs.marginRight || 0);
+	const marginH = (hs.marginTop || 0) + (hs.marginBottom || 0);
+	const maxW = Math.max(320, page.width - marginW - 20);
+	const maxH = Math.max(180, page.height - marginH - 20);
 
-	var aspect = (opts.width && opts.height) ? (opts.width / opts.height) : (16 / 9);
-	var fitW = Math.min(maxW, Math.floor(maxH * aspect));
-	var fitH = Math.min(maxH, Math.floor(fitW / aspect));
+	const aspect = (opts.width && opts.height) ? (opts.width / opts.height) : (16 / 9);
+	const fitW = Math.min(maxW, Math.floor(maxH * aspect));
+	const fitH = Math.min(maxH, Math.floor(fitW / aspect));
 
 	opts.width = fitW;
 	opts.height = fitH;
@@ -646,18 +646,18 @@ function hsgIsSeparatorNode( node ) {
 	if ( node.nodeType !== 1 ) {
 		return false;
 	}
-	var tag = node.tagName;
-	if ( tag === 'BR' || tag === 'HR' ) return true;
-	if ( /^H[1-6]$/.test( tag ) ) return true;
-	if ( tag === 'P' ) return true;
-	if ( tag === 'DIV' && node.style && node.style.clear ) return true;
-	if ( node.classList && node.classList.contains( 'clear' ) ) return true;
+	const tag = node.tagName;
+	if ( tag === 'BR' || tag === 'HR' ) {return true;}
+	if ( /^H[1-6]$/.test( tag ) ) {return true;}
+	if ( tag === 'P' ) {return true;}
+	if ( tag === 'DIV' && node.style && node.style.clear ) {return true;}
+	if ( node.classList && node.classList.contains( 'clear' ) ) {return true;}
 	return false;
 }
 
 function hsgRunHasTile( nodes ) {
-	for ( var i = 0; i < nodes.length; i++ ) {
-		var n = nodes[i];
+	for ( let i = 0; i < nodes.length; i++ ) {
+		const n = nodes[i];
 		if ( !n ) {
 			continue;
 		}
@@ -673,8 +673,8 @@ function hsgRunHasTile( nodes ) {
 }
 
 function hsgApplyTileClassToWrappers( root ) {
-	var scope = root || document;
-	scope.querySelectorAll( '.hsg-gallery-wrap, .hsg-list-gallery-wrap' ).forEach( function ( wrap ) {
+	const scope = root || document;
+	scope.querySelectorAll( '.hsg-gallery-wrap, .hsg-list-gallery-wrap' ).forEach( ( wrap ) => {
 		if ( wrap.querySelector( '.thumb[data-hsg-tile="1"]' ) ) {
 			hsgAddClass( wrap, 'hsg-tiles-horizontal' );
 		}
@@ -682,11 +682,11 @@ function hsgApplyTileClassToWrappers( root ) {
 }
 
 function hsgFixThumbFloat( root ) {
-	var scope = root || document;
-	var anchors = scope.querySelectorAll( '.thumb.tright .hsg-thumb, .thumb.tleft .hsg-thumb' );
+	const scope = root || document;
+	const anchors = scope.querySelectorAll( '.thumb.tright .hsg-thumb, .thumb.tleft .hsg-thumb' );
 
-	anchors.forEach( function ( a ) {
-		var container = a.closest( '.thumb' );
+	anchors.forEach( ( a ) => {
+		const container = a.closest( '.thumb' );
 		if ( !container || container.classList.contains( 'hsg-thumb-normalized' ) ) {
 			return;
 		}
@@ -699,11 +699,11 @@ function hsgFixThumbFloat( root ) {
 /* Normalize list-based galleries and wrap thumbs within each list item so they stay together
  */
 function hsgNormalizeListGalleries( root ) {
-	var scope = root || document;
-	var listItems = scope.querySelectorAll( HSG_LIST_ITEM_SELECTOR );
+	const scope = root || document;
+	const listItems = scope.querySelectorAll( HSG_LIST_ITEM_SELECTOR );
 
-	listItems.forEach( function ( li ) {
-		var existingWrap = li.querySelector( ':scope > .hsg-list-gallery-wrap' );
+	listItems.forEach( ( li ) => {
+		const existingWrap = li.querySelector( ':scope > .hsg-list-gallery-wrap' );
 		if ( existingWrap ) {
 			if ( li.classList && !li.classList.contains( 'hsg-thumb-list-item' ) ) {
 				li.classList.add( 'hsg-thumb-list-item' );
@@ -712,13 +712,13 @@ function hsgNormalizeListGalleries( root ) {
 			return;
 		}
 
-		var directBlocks = Array.prototype.slice.call(
-			li.querySelectorAll( ':scope > ' + HSG_GALLERY_TEXT_SELECTOR + ', :scope > .thumb' )
+		let directBlocks = Array.prototype.slice.call(
+			li.querySelectorAll( `:scope > ${  HSG_GALLERY_TEXT_SELECTOR  }, :scope > .thumb` )
 		);
 
 		/* Drop empty gallery placeholders to avoid wrapping dead nodes */
-		directBlocks = directBlocks.filter( function ( node ) {
-			var isGallery = node.classList && node.classList.contains( 'gallery' ) && node.classList.contains( 'text-break' );
+		directBlocks = directBlocks.filter( ( node ) => {
+			const isGallery = node.classList && node.classList.contains( 'gallery' ) && node.classList.contains( 'text-break' );
 			if ( isGallery && !node.querySelector( '.thumb' ) ) {
 				node.remove();
 				return false;
@@ -730,11 +730,11 @@ function hsgNormalizeListGalleries( root ) {
 			return;
 		}
 
-		var wrap = document.createElement( 'div' );
-		wrap.className = 'hsg-list-gallery-wrap' + ( hsgRunHasTile( directBlocks ) ? ' hsg-tiles-horizontal' : '' );
+		const wrap = document.createElement( 'div' );
+		wrap.className = `hsg-list-gallery-wrap${   hsgRunHasTile( directBlocks ) ? ' hsg-tiles-horizontal' : ''}`;
 		li.insertBefore( wrap, directBlocks[0] );
 
-		directBlocks.forEach( function ( node ) {
+		directBlocks.forEach( ( node ) => {
 			wrap.appendChild( node );
 		} );
 
@@ -752,23 +752,23 @@ function hsgNormalizeListGalleries( root ) {
 /* Normalize gallery/list thumb wrappers and apply HSG hooks to all thumbs
  */
 function hsgNormalizeThumbBlocks( root ) {
-	var scope = root || document;
+	const scope = root || document;
 
 	// Unwrap <p> around gallery text thumbs if present.
-	var galleries = scope.querySelectorAll( HSG_GALLERY_TEXT_SELECTOR );
-	galleries.forEach( function ( gallery ) {
+	const galleries = scope.querySelectorAll( HSG_GALLERY_TEXT_SELECTOR );
+	galleries.forEach( ( gallery ) => {
 		hsgAddClass( gallery, 'hsg-gallery-block' );
-		var pChild = gallery.querySelector( ':scope > p' );
-		var anchor = pChild ? pChild.querySelector( 'a' ) : null;
+		const pChild = gallery.querySelector( ':scope > p' );
+		const anchor = pChild ? pChild.querySelector( 'a' ) : null;
 		if ( pChild && anchor && !gallery.querySelector( ':scope > .thumb' ) ) {
-			var img = anchor.querySelector( 'img' );
-			var inner = document.createElement( 'div' );
+			const img = anchor.querySelector( 'img' );
+			const inner = document.createElement( 'div' );
 			inner.className = 'thumbinner hsg-thumb';
 			if ( img && img.width ) {
-				inner.style.width = ( img.width + 2 ) + 'px';
+				inner.style.width = `${img.width + 2   }px`;
 			}
 			inner.appendChild( anchor );
-			var thumb = document.createElement( 'div' );
+			const thumb = document.createElement( 'div' );
 			thumb.className = 'thumb hsg-thumb hsg-thumb-normalized';
 			thumb.appendChild( inner );
 			gallery.insertBefore( thumb, pChild );
@@ -777,50 +777,50 @@ function hsgNormalizeThumbBlocks( root ) {
 	} );
 
 	/* Apply HSG hooks to thumbs, inners, anchors, captions */
-	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( function ( t ) {
+	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( ( t ) => {
 		hsgAddClass( t, 'hsg-thumb' );
 	} );
-	scope.querySelectorAll( '.thumbinner' ).forEach( function ( ti ) {
+	scope.querySelectorAll( '.thumbinner' ).forEach( ( ti ) => {
 		hsgAddClass( ti, 'hsg-thumb' );
 	} );
-	scope.querySelectorAll( '.thumb a, ' + HSG_GALLERY_TEXT_SELECTOR + ' a' ).forEach( function ( a ) {
+	scope.querySelectorAll( `.thumb a, ${  HSG_GALLERY_TEXT_SELECTOR  } a` ).forEach( ( a ) => {
 		hsgAddClass( a, 'hsg-thumb' );
 	} );
-	scope.querySelectorAll( '.thumbcaption, .gallerytext' ).forEach( function ( cap ) {
+	scope.querySelectorAll( '.thumbcaption, .gallerytext' ).forEach( ( cap ) => {
 		hsgAddClass( cap, 'hsg-caption' );
-		cap.querySelectorAll( 'a' ).forEach( function ( link ) {
+		cap.querySelectorAll( 'a' ).forEach( ( link ) => {
 			hsgAddClass( link, 'hsg-thumb' );
 		} );
 	} );
 
 	/* Wrap loose sibling thumbs (non-list) together until a separator */
-	var parents = new Set();
-	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( function ( t ) {
+	const parents = new Set();
+	scope.querySelectorAll( HSG_THUMB_SELECTOR ).forEach( ( t ) => {
 		if ( t.parentElement ) {
 			parents.add( t.parentElement );
 		}
 	} );
-	parents.forEach( function ( parent ) {
+	parents.forEach( ( parent ) => {
 		if ( parent.tagName === 'LI' || parent.tagName === 'DD' ) {
 			return;
 		}
-		var nodes = Array.prototype.slice.call( parent.childNodes || [] );
-		var run = [];
-		var wrapRun = function ( collection, beforeNode ) {
+		const nodes = Array.prototype.slice.call( parent.childNodes || [] );
+		let run = [];
+		const wrapRun = function ( collection, beforeNode ) {
 			if ( !collection || collection.length === 0 ) {
 				return;
 			}
-			var hasTile = hsgRunHasTile( collection );
+			const hasTile = hsgRunHasTile( collection );
 			if ( collection.length === 1 && !hasTile ) {
 				return;
 			}
-			var wrap = document.createElement( 'div' );
-			wrap.className = 'hsg-gallery-wrap' + ( hasTile ? ' hsg-tiles-horizontal' : '' );
+			const wrap = document.createElement( 'div' );
+			wrap.className = `hsg-gallery-wrap${   hasTile ? ' hsg-tiles-horizontal' : ''}`;
 			parent.insertBefore( wrap, beforeNode || collection[0] );
-			collection.forEach( function ( n ) { wrap.appendChild( n ); } );
+			collection.forEach( ( n ) => { wrap.appendChild( n ); } );
 		};
 
-		nodes.forEach( function ( node ) {
+		nodes.forEach( ( node ) => {
 			if ( hsgIsSeparatorNode( node ) ) {
 				wrapRun( run, node );
 				run = [];
@@ -845,30 +845,30 @@ function hsgNormalizeThumbBlocks( root ) {
  * move the wrapper back into the nearest list item so bullets stay with their gallery.
  */
 function hsgRelocateWrapsIntoLists( root ) {
-	var scope = root || document;
+	const scope = root || document;
 
-	var isList = function ( node ) {
+	const isList = function ( node ) {
 		return !!node && (node.tagName === 'UL' || node.tagName === 'OL' || node.tagName === 'DL');
 	};
 
-	var isListItem = function ( node ) {
+	const isListItem = function ( node ) {
 		return !!node && (node.tagName === 'LI' || node.tagName === 'DD');
 	};
 
-	var deepestItemFromNode = function ( node ) {
-		if ( !node ) return null;
+	const deepestItemFromNode = function ( node ) {
+		if ( !node ) {return null;}
 
 		if ( isListItem( node ) ) {
-			var nestedList = node.querySelector( ':scope > ul:last-of-type, :scope > ol:last-of-type, :scope > dl:last-of-type' );
+			const nestedList = node.querySelector( ':scope > ul:last-of-type, :scope > ol:last-of-type, :scope > dl:last-of-type' );
 			if ( nestedList ) {
-				var deeper = deepestItemFromNode( nestedList );
+				const deeper = deepestItemFromNode( nestedList );
 				return deeper || node;
 			}
 			return node;
 		}
 
 		if ( isList( node ) ) {
-			var tail = node.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+			const tail = node.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
 			if ( !tail ) {
 				return null;
 			}
@@ -878,8 +878,8 @@ function hsgRelocateWrapsIntoLists( root ) {
 		return null;
 	};
 
-	var findListContext = function ( wrap ) {
-		var cur = wrap.previousSibling;
+	const findListContext = function ( wrap ) {
+		let cur = wrap.previousSibling;
 		while ( cur ) {
 			if ( hsgIsWhitespaceNode( cur ) ) {
 				cur = cur.previousSibling;
@@ -899,18 +899,18 @@ function hsgRelocateWrapsIntoLists( root ) {
 		return null;
 	};
 
-	var findTargetItem = function ( wrap ) {
+	const findTargetItem = function ( wrap ) {
 		/* 1) Nearest prior sibling that is a list or list item */
-		var ctx = findListContext( wrap );
-		var target = deepestItemFromNode( ctx );
+		const ctx = findListContext( wrap );
+		const target = deepestItemFromNode( ctx );
 		if ( target ) {
 			return target;
 		}
 
 		/* 2) Walk up ancestors; at each level, inspect prior siblings for lists/items. */
-		var ancestor = wrap.parentElement;
+		let ancestor = wrap.parentElement;
 		while ( ancestor ) {
-			var prev = ancestor.previousSibling;
+			let prev = ancestor.previousSibling;
 			while ( prev ) {
 				if ( hsgIsWhitespaceNode( prev ) ) {
 					prev = prev.previousSibling;
@@ -921,7 +921,7 @@ function hsgRelocateWrapsIntoLists( root ) {
 						prev = prev.previousSibling;
 						continue;
 					}
-					var candidate = deepestItemFromNode( prev );
+					const candidate = deepestItemFromNode( prev );
 					if ( candidate ) {
 						return candidate;
 					}
@@ -937,15 +937,15 @@ function hsgRelocateWrapsIntoLists( root ) {
 		return null;
 	};
 
-	scope.querySelectorAll( '.hsg-gallery-wrap' ).forEach( function ( wrap ) {
-		var parent = wrap.parentElement;
+	scope.querySelectorAll( '.hsg-gallery-wrap' ).forEach( ( wrap ) => {
+		const parent = wrap.parentElement;
 		if ( !parent ) {
 			return;
 		}
 
 		/* If wrapper sits directly under a list, move into the last item and mark it */
 		if ( parent.tagName === 'OL' || parent.tagName === 'UL' || parent.tagName === 'DL' ) {
-			var lastItem = parent.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+			const lastItem = parent.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
 			if ( lastItem ) {
 				lastItem.appendChild( wrap );
 				if ( lastItem.classList ) {
@@ -956,7 +956,7 @@ function hsgRelocateWrapsIntoLists( root ) {
 			}
 		}
 
-		if ( !wrap.parentElement ) return;
+		if ( !wrap.parentElement ) {return;}
 		/* Already inside a list item/description item */
 		if ( wrap.parentElement.tagName === 'LI' || wrap.parentElement.tagName === 'DD' ) {
 			if ( wrap.parentElement.classList ) {
@@ -966,13 +966,13 @@ function hsgRelocateWrapsIntoLists( root ) {
 			return;
 		}
 
-		var target = findTargetItem( wrap );
+		const target = findTargetItem( wrap );
 		if ( !target ) {
 			return;
 		}
 
 		if ( wrap.className.indexOf( 'hsg-list-gallery-wrap' ) === -1 ) {
-			wrap.className += (wrap.className ? ' ' : '') + 'hsg-list-gallery-wrap';
+			wrap.className += `${wrap.className ? ' ' : ''  }hsg-list-gallery-wrap`;
 		}
 
 		target.appendChild( wrap );
@@ -986,10 +986,10 @@ function hsgRelocateWrapsIntoLists( root ) {
 /* Merge immediately adjacent lists of the same type so numbering/bullets continue.
  */
 function hsgMergeAdjacentLists( root ) {
-	var scope = root || document;
-	var lists = scope.querySelectorAll( 'ol, ul' );
-	lists.forEach( function ( list ) {
-		var prev = list.previousElementSibling;
+	const scope = root || document;
+	const lists = scope.querySelectorAll( 'ol, ul' );
+	lists.forEach( ( list ) => {
+		const prev = list.previousElementSibling;
 		if ( !prev ) {
 			return;
 		}
@@ -1006,10 +1006,10 @@ function hsgMergeAdjacentLists( root ) {
 /* Move orphan HSG thumbs (not inside list items) into the adjacent list item when clearly adjacent to a list.
  */
 function hsgRelocateThumbsIntoLists( root ) {
-	var scope = root || document;
+	const scope = root || document;
 
-	var nearestPrevElement = function ( node ) {
-		var prev = node.previousSibling;
+	const nearestPrevElement = function ( node ) {
+		let prev = node.previousSibling;
 		while ( prev ) {
 			if ( prev.nodeType === 1 ) {
 				return prev;
@@ -1022,11 +1022,11 @@ function hsgRelocateThumbsIntoLists( root ) {
 		return null;
 	};
 
-	var findDeepestListItem = function ( list, depth ) {
+	const findDeepestListItem = function ( list, depth ) {
 		if ( !list || depth < 0 ) {
 			return null;
 		}
-		var item = null;
+		let item = null;
 		if ( list.tagName === 'DL' ) {
 			item = list.querySelector( ':scope > dd:last-of-type' );
 		} else {
@@ -1038,19 +1038,19 @@ function hsgRelocateThumbsIntoLists( root ) {
 		if ( depth === 0 ) {
 			return item;
 		}
-		var nested = item.querySelector( ':scope > ol:last-of-type, :scope > ul:last-of-type, :scope > dl:last-of-type' );
+		const nested = item.querySelector( ':scope > ol:last-of-type, :scope > ul:last-of-type, :scope > dl:last-of-type' );
 		return nested ? ( findDeepestListItem( nested, depth - 1 ) || item ) : item;
 	};
 
-	scope.querySelectorAll( '.thumb.hsg-thumb' ).forEach( function ( thumb ) {
+	scope.querySelectorAll( '.thumb.hsg-thumb' ).forEach( ( thumb ) => {
 		if ( thumb.closest( 'li, dd' ) ) {
 			return;
 		}
-		var prevEl = nearestPrevElement( thumb );
-		var target = null;
+		const prevEl = nearestPrevElement( thumb );
+		let target = null;
 		if ( prevEl && ( prevEl.tagName === 'LI' || prevEl.tagName === 'DD' ) ) {
 			/* Prefer nested DL within this item if present; depth limit 2 */
-			var nestedList = prevEl.querySelector( ':scope > dl:last-of-type, :scope > ol:last-of-type, :scope > ul:last-of-type' );
+			const nestedList = prevEl.querySelector( ':scope > dl:last-of-type, :scope > ol:last-of-type, :scope > ul:last-of-type' );
 			target = nestedList ? ( findDeepestListItem( nestedList, 2 ) || prevEl ) : prevEl;
 		} else if ( prevEl && ( prevEl.tagName === 'OL' || prevEl.tagName === 'UL' || prevEl.tagName === 'DL' ) ) {
 			target = findDeepestListItem( prevEl, 3 );
@@ -1072,21 +1072,21 @@ function hsgRelocateThumbsIntoLists( root ) {
  * move that paragraph's contents back into the last list item to keep bullets with the inline HSG.
  */
 function hsgRelocateInlineIntoLists( root ) {
-	var scope = root || document;
+	const scope = root || document;
 
-	var isInlineOnlyParagraph = function ( p ) {
+	const isInlineOnlyParagraph = function ( p ) {
 		if ( !p || p.tagName !== 'P' ) {
 			return false;
 		}
-		var bad = p.querySelector( 'div, ul, ol, dl, table, blockquote, p' );
+		const bad = p.querySelector( 'div, ul, ol, dl, table, blockquote, p' );
 		return !bad;
 	};
 
-	var moveIntoLastItem = function ( list, para ) {
+	const moveIntoLastItem = function ( list, para ) {
 		if ( !list || !para ) {
 			return;
 		}
-		var lastChild = list.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
+		const lastChild = list.querySelector( ':scope > li:last-of-type, :scope > dd:last-of-type' );
 		if ( !lastChild ) {
 			return;
 		}
@@ -1096,14 +1096,14 @@ function hsgRelocateInlineIntoLists( root ) {
 		para.remove();
 	};
 
-	scope.querySelectorAll( 'p' ).forEach( function ( p ) {
+	scope.querySelectorAll( 'p' ).forEach( ( p ) => {
 		if ( !isInlineOnlyParagraph( p ) ) {
 			return;
 		}
 		if ( !p.querySelector( '.hsg-inline, .link-youtube.hsg-thumb' ) ) {
 			return;
 		}
-		var prev = p.previousElementSibling;
+		const prev = p.previousElementSibling;
 		if ( !prev || ( prev.tagName !== 'OL' && prev.tagName !== 'UL' && prev.tagName !== 'DL' ) ) {
 			return;
 		}
@@ -1112,20 +1112,20 @@ function hsgRelocateInlineIntoLists( root ) {
 
 	/* If an inline HSG ended up directly inside a list item after DOM operations,
 	 * ensure it stays within the current LI instead of creating a new list */
-	scope.querySelectorAll( '.hsg-inline' ).forEach( function ( inline ) {
-		var li = inline.closest( 'li, dd' );
+	scope.querySelectorAll( '.hsg-inline' ).forEach( ( inline ) => {
+		const li = inline.closest( 'li, dd' );
 		if ( !li ) {
 			return;
 		}
 		if ( li.classList && !li.classList.contains( 'hsg-inline-list-item' ) ) {
 			li.classList.add( 'hsg-inline-list-item' );
 		}
-		var parentList = li.parentElement;
+		const parentList = li.parentElement;
 		if ( !parentList || ( parentList.tagName !== 'OL' && parentList.tagName !== 'UL' && parentList.tagName !== 'DL' ) ) {
 			return;
 		}
 		/* If the inline anchor was split into its own list item, merge back into previous sibling if appropriate. */
-		var prev = li.previousElementSibling;
+		const prev = li.previousElementSibling;
 		if ( prev && prev.tagName === li.tagName ) {
 			while ( inline.previousSibling ) {
 				prev.appendChild( inline.previousSibling );
@@ -1139,7 +1139,7 @@ function hsgRelocateInlineIntoLists( root ) {
 }
 
 if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
-	mw.hook( 'wikipage.content' ).add( function ( $content ) {
+	mw.hook( 'wikipage.content' ).add( ( $content ) => {
 		hsgFixThumbFloat( $content && $content[0] ? $content[0] : document );
 		hsgNormalizeListGalleries( $content && $content[0] ? $content[0] : document );
 		hsgNormalizeThumbBlocks( $content && $content[0] ? $content[0] : document );
@@ -1147,7 +1147,7 @@ if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 		hsgRelocateThumbsIntoLists( $content && $content[0] ? $content[0] : document );
 		hsgMergeAdjacentLists( $content && $content[0] ? $content[0] : document );
 		hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
-		setTimeout( function () {
+		setTimeout( () => {
 			hsgRelocateThumbsIntoLists( $content && $content[0] ? $content[0] : document );
 			hsgMergeAdjacentLists( $content && $content[0] ? $content[0] : document );
 			hsgRelocateInlineIntoLists( $content && $content[0] ? $content[0] : document );
@@ -1155,7 +1155,7 @@ if ( typeof mw !== 'undefined' && mw.hook && mw.hook( 'wikipage.content' ) ) {
 	} );
 } 
 else {
-	document.addEventListener( 'DOMContentLoaded', function () {
+	document.addEventListener( 'DOMContentLoaded', () => {
 		hsgFixThumbFloat( document );
 		hsgNormalizeListGalleries( document );
 		hsgNormalizeThumbBlocks( document );
@@ -1163,7 +1163,7 @@ else {
 		hsgRelocateThumbsIntoLists( document );
 		hsgMergeAdjacentLists( document );
 		hsgRelocateInlineIntoLists( document );
-		setTimeout( function () {
+		setTimeout( () => {
 			hsgRelocateThumbsIntoLists( document );
 			hsgMergeAdjacentLists( document );
 			hsgRelocateInlineIntoLists( document );

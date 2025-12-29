@@ -1,8 +1,8 @@
 {
-	"name": "mediawikiext/highslidegallery",
-	"description": "MediaWiki extension: HighslideGallery leverages Highslide JS-powered galleries for images and YouTube videos: supports thumbnails or inline anchor text, slideshow grouping via hsgid and MediaWiki-style captions within an interactive overlay.",
+	"name": "mediawiki/highslidegallery",
+	"description": "Leverages Highslide JS-powered galleries for images and YouTube videos: supports thumbnails or inline anchor text, slideshow grouping via hsgid and MediaWiki-style captions within an interactive overlay.",
 	"type": "mediawiki-extension",
-	"license": "GPL-2.0",
+	"license": "GPL-2.0-only",
 	"keywords": ["mediawiki", "extension", "gallery", "lightbox", "highslide", "images", "youtube"],
 	"homepage": "https://gitlab.com/z929669/highslidegallery",
 	"support": {
@@ -13,12 +13,19 @@
 		"php": "^7.4 || ^8.0",
 		"composer/installers": "^2.0"
 	},
+	"require-dev": {
+		"mediawiki/mediawiki-codesniffer": "^35.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"composer/installers": true
+		}
+	},
 	"extra": {
 		"installer-name": "HighslideGallery",
 		"branch-alias": {
-			"dev-REL1_39": "1.39.x-dev",
-			"dev-REL1_41": "1.41.x-dev",
-			"dev-master": "1.4.x-dev"
+			"dev-REL1_39": "2.1.x-dev",
+			"dev-master": "2.1.x-dev"
 		}
 	}
 }
